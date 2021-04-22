@@ -7,6 +7,18 @@ namespace DMDungeonGenerator {
 
     public class DungeonSet:ScriptableObject {
         public new string name = "";
-        public List<RoomData> spawns = new List<RoomData>(); //also bosses, doors, whatever
+        public string description = "Enter any text here";
+
+        public int TargetRooms = 100;
+        public int minRooms = 25; //if the generator finishes with fewer than this many rooms, it tries again.  This prevents dungeons being very very small due to super bad rng
+
+        [Header("The first room to spawn will be chosen from this list")]
+        public List<GameObject> spawnRooms = new List<GameObject>(); //also bosses, doors, whatever
+
+        [Header("Generator will use these rooms randomly")]
+        public List<GameObject> possibleRooms = new List<GameObject>();
+
+        [Header("You must have at least one dead end room (which is only a single voxel in volume)!")]
+        public List<GameObject> deadendRooms = new List<GameObject>();
     }
 }

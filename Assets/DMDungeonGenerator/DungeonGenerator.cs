@@ -18,8 +18,10 @@ namespace DMDungeonGenerator {
         /// <summary>
         /// The total number of rooms you want the dungeon to have.  This is a "soft" limit, target of 100 often generates 103 rooms etc
         /// </summary>
-        public int targetRooms = 100;
+        private int targetRooms = 100;
         public bool generationComplete = false;
+        private bool regenerateWithDifferentSeed = false;
+        private int attempts = 0;
         /// <summary>
         /// Hook into this to do any dungeon postprocessing, like grabbing the list of all the rooms that were generated and choosing one as a boss room, etc
         /// </summary>
@@ -34,10 +36,11 @@ namespace DMDungeonGenerator {
         public static float voxelScale = 1f; //see note above about changing this.
 
         [Header("Room Prefabs")]
+        public DungeonSet generatorSettings;
         //room prefabs, should be extracted into a SO so we can swap them easy
-        public GameObject spawnFirstRoom;
-        public List<GameObject> roomPrefabs = new List<GameObject>();
-        public GameObject singleVoxelRoom; //need this for the edge cases where nothing else fits.
+        //public GameObject spawnFirstRoom;
+        //public List<GameObject> roomPrefabs = new List<GameObject>();
+        //public GameObject singleVoxelRoom; //need this for the edge cases where nothing else fits.
         //---
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace DMDungeonGenerator {
         public bool generateInUpdate = false;  
         public float generationTimer = 1f; //how long to wait before generating the next room when generating in the editor
         private float _generationTimer = 0f;
-
+        
         /// <summary>
         /// Draws all the voxels occupied in the GlobalVoxelGrid via gizmos 
         /// </summary>
@@ -71,7 +74,28 @@ namespace DMDungeonGenerator {
 
         public void Start() {
             if(randomSeedOnStart) seed = UnityEngine.Random.Range(0, 9999);
+            targetRooms = generatorSettings.TargetRooms;
+
             StartGenerator(seed);
+        }
+
+        public void StartGenerator(int seed) {
+            Debug.Log("Dungeon Generator:: Starting generation with seed [" + seed + "]");
+            DMDebugTimer.Start();
+
+            attempts = 1;
+            do {
+                DestroyAllGeneratedRooms();
+                RunGenerator(seed);
+                if(generateInUpdate) break; 
+            } while(regenerateWithDifferentSeed);
+
+        }
+
+        public void DestroyAllGeneratedRooms() {
+            while(transform.childCount > 0) {
+                DestroyImmediate(transform.GetChild(0).gameObject);
+            }
         }
 
         public void Update() {
@@ -79,20 +103,62 @@ namespace DMDungeonGenerator {
                 _generationTimer -= Time.deltaTime;
                 if(_generationTimer <= 0f) {
                     _generationTimer = generationTimer;
-                    if(openSet.Count > 0) GenerateNextRoom();
+
+                    if(regenerateWithDifferentSeed) {
+                        DestroyAllGeneratedRooms();
+                        RunGenerator(seed);
+                    }
+
+                    if(openSet.Count > 0) {
+                        GenerateNextRoom();  //this is just isolated so we can tick this in update during testing
+                    } else { 
+                        //generation is done, do any dungeon specific postprocessing here
+                        if(AllRooms.Count < generatorSettings.minRooms) {
+                            regenerateWithDifferentSeed = true;
+                            Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/" + generatorSettings.minRooms + "] ... trying again with seed++");
+                            return;
+                        }
+
+                        if(!generationComplete) {
+                            Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms] and [" + attempts + "] attempts");
+                            generationComplete = true;
+                            if(OnComplete != null) OnComplete(this);
+                        }
+                    }
+
+
                 }
             }
+
+
+            //if(generationComplete && Input.GetKeyUp(KeyCode.Space)) {
+            //    //restart?
+            //    Debug.Log("Regenerating the next dungeon");
+            //    seed++;
+            //    generationComplete = false;
+            //    //need to destroy all the rooms
+            //    while(transform.childCount > 0) {
+            //        DestroyImmediate(transform.GetChild(0).gameObject);
+            //    }
+            //    StartGenerator(seed);
+            //}
         }
 
         //Call this to start the generator.  
-        public void StartGenerator(int seed) {
+        public void RunGenerator(int seed) {
+            openSet = new List<Door>();
+            GlobalVoxelGrid = new Dictionary<Vector3, bool>();
+            AllRooms = new List<GameObject>();
+            if(regenerateWithDifferentSeed) {
+                seed++;
+                attempts++;
+                regenerateWithDifferentSeed = false;
+            }
 
-            DMDebugTimer.Start();
-
-            Debug.Log("Dungeon Generator:: Starting generation with seed [" + seed + "]");
             rand = new System.Random(seed);
 
-            RoomData startRoomPrefab = spawnFirstRoom.GetComponent<RoomData>();
+            int ri = rand.Next(0, generatorSettings.spawnRooms.Count); //get a random start room
+            RoomData startRoomPrefab = generatorSettings.spawnRooms[ri].GetComponent<RoomData>();
             RoomData instantiatedDataStartRoom = AddRoom(startRoomPrefab, Vector3.zero, 0f);
 
             for(int i = 0; i < instantiatedDataStartRoom.Doors.Count; i++) {
@@ -105,11 +171,15 @@ namespace DMDungeonGenerator {
             }
 
             //generation is done, do any dungeon specific postprocessing here
+            if(AllRooms.Count < generatorSettings.minRooms) {
+                regenerateWithDifferentSeed = true;
+                Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/"+generatorSettings.minRooms +"] ... trying again with seed++");
+                return;
+            }
 
-            Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms ]");
+            Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms] and [" + attempts + "] attempts");
             generationComplete = true;
-            OnComplete(this); 
-
+            if(OnComplete != null) OnComplete(this);
 
         }
 
@@ -121,7 +191,7 @@ namespace DMDungeonGenerator {
             Vector3 targetWorldVoxPos = GetVoxelWorldPos(targetVoxel, targetDoor.parent.rotation) + targetDoor.parent.transform.position; //need this for offset
             Vector3 targetWorldDoorDir = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation); //the target voxel we're going to align to
 
-            List<GameObject> roomsToTry = new List<GameObject>(roomPrefabs);
+            List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
             //this ensures we don't try the same room over and over, and so we know when we have exhausted all the possiblities and just have to cap it off with a 1x1x1 vox room
             roomsToTry.Shuffle(rand); //shuffle this list so we dont always try the rooms in the same order.
@@ -130,7 +200,9 @@ namespace DMDungeonGenerator {
                 roomsToTry.Clear();
                 //Debug.Log("Ending Gen, Target rooms hit");
             }
-            roomsToTry.Add(singleVoxelRoom); //append the "singleVoxelRoom" as a last resort, this room will fit in ALL cases
+
+            int ri = rand.Next(0, generatorSettings.deadendRooms.Count); //get a random deadend room
+            roomsToTry.Add(generatorSettings.deadendRooms[ri]); //append the "singleVoxelRoom" as a last resort, this room will fit in ALL cases
 
             //data we will have once we find a room, used for spawning the room into the world
             RoomData newRoom = null;

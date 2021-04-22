@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: DefaultDungeonSet
   m_EditorClassIdentifier: 
   name: Default
-  spawns:
-  - {fileID: 11487962, guid: d754a0e94eb9a49d79cd8eb8d7db1333, type: 3}
-  bosses:
-  - {fileID: 11487962, guid: d754a0e94eb9a49d79cd8eb8d7db1333, type: 3}
-  doors:
-  - {fileID: 11476880, guid: 2e19caa3de7304112952c9d091d67bc7, type: 3}
-  roomTemplates:
-  - {fileID: 11496048, guid: a445b1f204ed24ea0ac0fb43e1ce86a9, type: 3}
-  - {fileID: 11417102, guid: 94288f0890bc94f128db5ddf13f48216, type: 3}
-  - {fileID: 11439352, guid: a579964b199ab42c5bc52333d6725cbc, type: 3}
-  - {fileID: 11442848, guid: f23d688e5d685456e85a6f6f3b16c0fe, type: 3}
-  - {fileID: 11442848, guid: f23d688e5d685456e85a6f6f3b16c0fe, type: 3}
-  - {fileID: 11477556, guid: b8bb0b9d3fc1a41f9b16451c5a39da46, type: 3}
-  - {fileID: 11422804, guid: 99e618aed580d4b2f9576d96ae838ffd, type: 3}
-  - {fileID: 11454496, guid: e18035417eaef403e8cfd6272f8d895c, type: 3}
+  description: Enter any text here
+  TargetRooms: 40
+  minRooms: 25
+  spawnRooms:
+  - {fileID: 5149821279653870777, guid: 1741633871885004d96a48054114f0cc, type: 3}
+  possibleRooms:
+  - {fileID: 8514571481725106487, guid: e45e31dea046c844f8f31660c289cf9a, type: 3}
+  - {fileID: 5149821279653870777, guid: 1741633871885004d96a48054114f0cc, type: 3}
+  - {fileID: 9203672688307997005, guid: 3381210ba54c6394c8e2afc8466b66d8, type: 3}
+  - {fileID: 1684963517094696352, guid: 3f5fccb700e12894dbbe079d1ac55613, type: 3}
+  - {fileID: 5122933443986338673, guid: 188068261e7be8348be7024b96650a28, type: 3}
+  - {fileID: 9012393329138378607, guid: 690a266599bca6f40911e95530d43995, type: 3}
+  - {fileID: 694522302259145350, guid: ff9a55957b903804fb9e259cd6af3e9d, type: 3}
+  deadendRooms:
+  - {fileID: 694522302259145350, guid: ff9a55957b903804fb9e259cd6af3e9d, type: 3}

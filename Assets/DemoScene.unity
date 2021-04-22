@@ -399,22 +399,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   randomSeedOnStart: 0
-  seed: 0
-  targetRooms: 100
+  seed: 1456
   generationComplete: 0
-  spawnFirstRoom: {fileID: 694522302259145350, guid: ff9a55957b903804fb9e259cd6af3e9d, type: 3}
-  roomPrefabs:
-  - {fileID: 1684963517094696352, guid: 3f5fccb700e12894dbbe079d1ac55613, type: 3}
-  - {fileID: 5149821279653870777, guid: 1741633871885004d96a48054114f0cc, type: 3}
-  - {fileID: 9203672688307997005, guid: 3381210ba54c6394c8e2afc8466b66d8, type: 3}
-  - {fileID: 9012393329138378607, guid: 690a266599bca6f40911e95530d43995, type: 3}
-  - {fileID: 5122933443986338673, guid: 188068261e7be8348be7024b96650a28, type: 3}
-  - {fileID: 8514571481725106487, guid: e45e31dea046c844f8f31660c289cf9a, type: 3}
-  singleVoxelRoom: {fileID: 694522302259145350, guid: ff9a55957b903804fb9e259cd6af3e9d, type: 3}
+  generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
   generateInUpdate: 1
   generationTimer: 0.1
-  drawGlobalVoxels: 1
+  drawGlobalVoxels: 0
 --- !u!4 &1647662048
 Transform:
   m_ObjectHideFlags: 0
