@@ -48,7 +48,9 @@ namespace DMDungeonGenerator {
         /// </summary>
         [HideInInspector]
         public List<GameObject> AllRooms = new List<GameObject>();
-
+        [HideInInspector]
+        public List<Door> AllDoorsData = new List<Door>(); //these are in local space
+        public List<GameObject> AllDoors = new List<GameObject>();
 
         /// <summary>
         /// The voxel grid we use for computing overlaps. Access it with a vector3 pos (must be RoundedToInt) via IsVoxelOccupied instead of directly
@@ -70,6 +72,7 @@ namespace DMDungeonGenerator {
         /// Draws all the voxels occupied in the GlobalVoxelGrid via gizmos 
         /// </summary>
         public bool drawGlobalVoxels = false;
+        public bool drawAllDoors = false;
 
 
         public void Start() {
@@ -90,13 +93,10 @@ namespace DMDungeonGenerator {
                 if(generateInUpdate) break; 
             } while(regenerateWithDifferentSeed);
 
+            PostGeneration();
         }
 
-        public void DestroyAllGeneratedRooms() {
-            while(transform.childCount > 0) {
-                DestroyImmediate(transform.GetChild(0).gameObject);
-            }
-        }
+       
 
         public void Update() {
             if(generateInUpdate) {
@@ -123,7 +123,9 @@ namespace DMDungeonGenerator {
                             Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms] and [" + attempts + "] attempts");
                             generationComplete = true;
                             if(OnComplete != null) OnComplete(this);
+                            PostGeneration();
                         }
+
                     }
 
 
@@ -149,6 +151,7 @@ namespace DMDungeonGenerator {
             openSet = new List<Door>();
             GlobalVoxelGrid = new Dictionary<Vector3, bool>();
             AllRooms = new List<GameObject>();
+            AllDoorsData = new List<Door>();
             if(regenerateWithDifferentSeed) {
                 seed++;
                 attempts++;
@@ -190,6 +193,9 @@ namespace DMDungeonGenerator {
             Vector3 targetVoxel = targetDoor.position + targetDoor.direction; //offset one voxel in door dir so we work on the unoccupied voxel the door leads to
             Vector3 targetWorldVoxPos = GetVoxelWorldPos(targetVoxel, targetDoor.parent.rotation) + targetDoor.parent.transform.position; //need this for offset
             Vector3 targetWorldDoorDir = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation); //the target voxel we're going to align to
+
+            Door doorForProcessing = new Door(targetWorldVoxPos, targetWorldDoorDir, targetDoor.parent);
+            AllDoorsData.Add(doorForProcessing);
 
             List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
@@ -284,10 +290,27 @@ namespace DMDungeonGenerator {
                     openSet.Add(instantiatedNewRoom.Doors[i]);
                 }
             }
-
         }
 
-      
+        //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)
+        private void PostGeneration() {
+            //Spawn in doors.
+            Debug.Log("Doors: " + AllDoorsData.Count);
+            for(int i = 0; i < AllDoorsData.Count; i++) {
+                int ri = rand.Next(0, generatorSettings.doors.Count); //get a random start room
+                GameObject doorToSpawn = generatorSettings.doors[ri];
+                GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, AllDoorsData[i].position - (AllDoorsData[i].direction * 0.5f), Quaternion.LookRotation(AllDoorsData[i].direction), this.transform);
+
+                AllDoors.Add(spawnedDoor);
+            }
+        }
+
+        public void DestroyAllGeneratedRooms() {
+            while(transform.childCount > 0) {
+                DestroyImmediate(transform.GetChild(0).gameObject);
+            }
+        }
+
 
         /// <summary>
         /// Calculates the amount of rotation the room needs so that the new room's door will align to the target door
@@ -379,7 +402,7 @@ namespace DMDungeonGenerator {
         }
 
         private void OnDrawGizmos() {
-            
+
             Gizmos.color = Color.blue;
             for(int i = 0; i < openSet.Count; i++) {
                 Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
@@ -390,6 +413,13 @@ namespace DMDungeonGenerator {
             if(drawGlobalVoxels) {
                 foreach(var i in GlobalVoxelGrid) {
                     Gizmos.DrawWireCube(i.Key, Vector3.one);
+                }
+            }
+
+            if(drawAllDoors) {
+                Gizmos.color = Color.cyan;
+                for(int i = 0; i < AllDoorsData.Count; i++) {
+                    Gizmos.DrawWireCube(AllDoorsData[i].position, Vector3.one);
                 }
             }
         }

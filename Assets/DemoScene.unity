@@ -403,9 +403,11 @@ MonoBehaviour:
   generationComplete: 0
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
+  AllDoors: []
   generateInUpdate: 1
   generationTimer: 0.1
   drawGlobalVoxels: 0
+  drawAllDoors: 0
 --- !u!4 &1647662048
 Transform:
   m_ObjectHideFlags: 0

@@ -20,5 +20,8 @@ namespace DMDungeonGenerator {
 
         [Header("You must have at least one dead end room (which is only a single voxel in volume)!")]
         public List<GameObject> deadendRooms = new List<GameObject>();
+
+        [Header("Objects")]
+        public List<GameObject> doors = new List<GameObject>(); //graphical representation of the doors. Will be spawned post generation
     }
 }
