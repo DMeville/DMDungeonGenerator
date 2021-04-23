@@ -14,7 +14,7 @@ namespace DMDungeonGenerator {
         /// <summary>
         /// The seed to be used by the generators random number generator, the same seed will always generate the same dungeon.
         /// </summary>
-        public int seed = 0;
+        public int randomSeed = 0;
         /// <summary>
         /// The total number of rooms you want the dungeon to have.  This is a "soft" limit, target of 100 often generates 103 rooms etc
         /// </summary>
@@ -76,10 +76,10 @@ namespace DMDungeonGenerator {
 
 
         public void Start() {
-            if(randomSeedOnStart) seed = UnityEngine.Random.Range(0, 9999);
+            if(randomSeedOnStart) randomSeed = UnityEngine.Random.Range(0, 9999);
             targetRooms = generatorSettings.TargetRooms;
 
-            StartGenerator(seed);
+            StartGenerator(randomSeed);
         }
 
         public void StartGenerator(int seed) {
@@ -106,7 +106,7 @@ namespace DMDungeonGenerator {
 
                     if(regenerateWithDifferentSeed) {
                         DestroyAllGeneratedRooms();
-                        RunGenerator(seed);
+                        RunGenerator(randomSeed);
                     }
 
                     if(openSet.Count > 0) {
@@ -115,7 +115,9 @@ namespace DMDungeonGenerator {
                         //generation is done, do any dungeon specific postprocessing here
                         if(AllRooms.Count < generatorSettings.minRooms) {
                             regenerateWithDifferentSeed = true;
-                            Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/" + generatorSettings.minRooms + "] ... trying again with seed++");
+                            this.randomSeed++;
+
+                            Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/" + generatorSettings.minRooms + "] ... trying again with seed++ [ " + this.randomSeed + " ]");
                             return;
                         }
 
@@ -153,8 +155,7 @@ namespace DMDungeonGenerator {
             AllRooms = new List<GameObject>();
             AllDoorsData = new List<Door>();
             if(regenerateWithDifferentSeed) {
-                seed++;
-                this.seed = seed;
+                seed = this.randomSeed;
                 Debug.Log("Dungeon Generator:: Seed changed to [" + seed + "]");
                 attempts++;
                 regenerateWithDifferentSeed = false;
@@ -178,7 +179,8 @@ namespace DMDungeonGenerator {
             //generation is done, do any dungeon specific postprocessing here
             if(AllRooms.Count < generatorSettings.minRooms) {
                 regenerateWithDifferentSeed = true;
-                Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/"+generatorSettings.minRooms +"] ... trying again with seed++");
+                this.randomSeed++;
+                Debug.Log("Dungeon Generator:: Generation failed to meet min rooms [" + AllRooms.Count + "/"+generatorSettings.minRooms +"] ... trying again with seed++ [ " + this.randomSeed +" ]");
                 return;
             }
 

@@ -399,13 +399,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   randomSeedOnStart: 0
-  seed: 9766
+  randomSeed: 9766
   generationComplete: 0
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
   AllDoorsData: []
   AllDoors: []
-  generateInUpdate: 1
+  generateInUpdate: 0
   generationTimer: 0.1
   drawGlobalVoxels: 0
   drawAllDoors: 0
