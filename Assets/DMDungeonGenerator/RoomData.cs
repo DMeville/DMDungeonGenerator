@@ -89,7 +89,7 @@ namespace DMDungeonGenerator {
         /// So this just updates those references to the correct object
         /// </summary>
         public void UpdateInstantiatedData() {
-            UnityEditor.Selection.objects = new UnityEngine.Object[] { this.gameObject };
+            //UnityEditor.Selection.objects = new UnityEngine.Object[] { this.gameObject };
             //Debug.Log("Updated Door parent data to " + this.gameObject.name);
             for(int i = 0; i < Doors.Count; i++) {
                 Doors[i].parent = this;

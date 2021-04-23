@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using DMDungeonGenerator;
 
 namespace DMDungeonGenerator {
-    [CreateAssetMenu(fileName = "DungeonData", menuName = "DMDungeonGenerator/Create Dungeon Data", order = 1)]
+    //[CreateAssetMenu(fileName = "DungeonData", menuName = "DMDungeonGenerator/Create Dungeon Data", order = 1)]
 
     public class DungeonData : ScriptableObject {
 

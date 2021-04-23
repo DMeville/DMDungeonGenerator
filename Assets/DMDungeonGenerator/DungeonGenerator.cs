@@ -132,7 +132,7 @@ namespace DMDungeonGenerator {
                 }
             }
 
-
+            
             //if(generationComplete && Input.GetKeyUp(KeyCode.Space)) {
             //    //restart?
             //    Debug.Log("Regenerating the next dungeon");
@@ -154,6 +154,8 @@ namespace DMDungeonGenerator {
             AllDoorsData = new List<Door>();
             if(regenerateWithDifferentSeed) {
                 seed++;
+                this.seed = seed;
+                Debug.Log("Dungeon Generator:: Seed changed to [" + seed + "]");
                 attempts++;
                 regenerateWithDifferentSeed = false;
             }
