@@ -124,7 +124,6 @@ namespace DMDungeonGenerator {
                         if(!generationComplete) {
                             Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms] and [" + attempts + "] attempts");
                             generationComplete = true;
-                            if(OnComplete != null) OnComplete(this);
                             PostGeneration();
                         }
 
@@ -186,7 +185,6 @@ namespace DMDungeonGenerator {
 
             Debug.Log("Dungeon Generator:: Generation Complete in [" + DMDebugTimer.Lap() + "ms] and [" + attempts + "] attempts");
             generationComplete = true;
-            if(OnComplete != null) OnComplete(this);
 
         }
 
@@ -298,6 +296,8 @@ namespace DMDungeonGenerator {
 
         //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)
         private void PostGeneration() {
+            Debug.Log("Dungeon Generator:: Post Generation Starting. Computing Doors, Dungeon Graph, Etc");
+
             //Spawn in doors.
             Debug.Log("Doors: " + AllDoorsData.Count);
             for(int i = 0; i < AllDoorsData.Count; i++) {
@@ -307,6 +307,11 @@ namespace DMDungeonGenerator {
 
                 AllDoors.Add(spawnedDoor);
             }
+
+            //need to generate dungeon graph.  This is a (linked) list of all the rooms and how they are connected together, and the doors they share.
+
+            //let the user hook in here once it's all done
+            if(OnComplete != null) OnComplete(this);
         }
 
         public void DestroyAllGeneratedRooms() {
