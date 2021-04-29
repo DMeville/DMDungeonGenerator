@@ -67,15 +67,20 @@ namespace DMDungeonGenerator {
         public bool generateInUpdate = false;  
         public float generationTimer = 1f; //how long to wait before generating the next room when generating in the editor
         private float _generationTimer = 0f;
-        
+        private int highestDepth = 0;
+        public Gradient debugGradient = new Gradient();
         /// <summary>
         /// Draws all the voxels occupied in the GlobalVoxelGrid via gizmos 
         /// </summary>
         public bool drawGlobalVoxels = false;
         public bool drawAllDoors = false;
+        public bool drawGraph = false;
+        public bool drawDepthLabels = false;
 
+        public List<GraphNode> DungeonGraph = new List<GraphNode>();
 
         public void Start() {
+            generationComplete = true; //we set this to true by default so that StartGenerator knows nothing is running already, and sets it to false when it starts.  
             if(randomSeedOnStart) randomSeed = UnityEngine.Random.Range(0, 9999);
             targetRooms = generatorSettings.TargetRooms;
 
@@ -83,8 +88,13 @@ namespace DMDungeonGenerator {
         }
 
         public void StartGenerator(int seed) {
+            if(!generationComplete) {
+                Debug.Log("Dungeon Generator:: Can not start generator as previous generator is not yet complete!");
+                return;
+            }
             Debug.Log("Dungeon Generator:: Starting generation with seed [" + seed + "]");
             DMDebugTimer.Start();
+            generationComplete = false;
 
             attempts = 1;
             do {
@@ -93,7 +103,9 @@ namespace DMDungeonGenerator {
                 if(generateInUpdate) break; 
             } while(regenerateWithDifferentSeed);
 
-            PostGeneration();
+            if(!generateInUpdate) {
+                PostGeneration();
+            } 
         }
 
        
@@ -128,23 +140,17 @@ namespace DMDungeonGenerator {
                         }
 
                     }
-
-
                 }
             }
 
-            
-            //if(generationComplete && Input.GetKeyUp(KeyCode.Space)) {
-            //    //restart?
-            //    Debug.Log("Regenerating the next dungeon");
-            //    seed++;
-            //    generationComplete = false;
-            //    //need to destroy all the rooms
-            //    while(transform.childCount > 0) {
-            //        DestroyImmediate(transform.GetChild(0).gameObject);
-            //    }
-            //    StartGenerator(seed);
-            //}
+
+            if(Input.GetKeyUp(KeyCode.Space)) {
+                //restart?
+                Debug.Log("Regenerating the next dungeon");
+                randomSeed++;
+                //need to destroy all the rooms
+                StartGenerator(randomSeed);
+            }
         }
 
         //Call this to start the generator.  
@@ -153,6 +159,8 @@ namespace DMDungeonGenerator {
             GlobalVoxelGrid = new Dictionary<Vector3, bool>();
             AllRooms = new List<GameObject>();
             AllDoorsData = new List<Door>();
+            DungeonGraph = new List<GraphNode>();
+
             if(regenerateWithDifferentSeed) {
                 seed = this.randomSeed;
                 Debug.Log("Dungeon Generator:: Seed changed to [" + seed + "]");
@@ -165,6 +173,12 @@ namespace DMDungeonGenerator {
             int ri = rand.Next(0, generatorSettings.spawnRooms.Count); //get a random start room
             RoomData startRoomPrefab = generatorSettings.spawnRooms[ri].GetComponent<RoomData>();
             RoomData instantiatedDataStartRoom = AddRoom(startRoomPrefab, Vector3.zero, 0f);
+
+            GraphNode firstNode = new GraphNode();
+            firstNode.data = instantiatedDataStartRoom;
+            instantiatedDataStartRoom.node = firstNode; //cyclic yay
+            DungeonGraph.Add(firstNode);
+
 
             for(int i = 0; i < instantiatedDataStartRoom.Doors.Count; i++) {
                 openSet.Add(instantiatedDataStartRoom.Doors[i]);
@@ -196,7 +210,7 @@ namespace DMDungeonGenerator {
             Vector3 targetWorldVoxPos = GetVoxelWorldPos(targetVoxel, targetDoor.parent.rotation) + targetDoor.parent.transform.position; //need this for offset
             Vector3 targetWorldDoorDir = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation); //the target voxel we're going to align to
 
-            Door doorForProcessing = new Door(targetWorldVoxPos, targetWorldDoorDir, targetDoor.parent);
+            Door doorForProcessing = new Door(targetWorldVoxPos, targetWorldDoorDir, targetDoor.parent); //why do I do this instead of using targetDoor directly...?
             AllDoorsData.Add(doorForProcessing);
 
             List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
@@ -292,23 +306,68 @@ namespace DMDungeonGenerator {
                     openSet.Add(instantiatedNewRoom.Doors[i]);
                 }
             }
+
+
+
+            //spawn in door geometry
+            int di = rand.Next(0, generatorSettings.doors.Count); //get a random door from the list
+            GameObject doorToSpawn = generatorSettings.doors[di];
+            GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f), Quaternion.LookRotation(doorForProcessing.direction), this.transform);
+            doorForProcessing.spawnedDoor = spawnedDoor; 
+
+            //need to link up the doors to the roomData's too?
+            AllDoors.Add(spawnedDoor);
+
+            //instantiatedNewRoom.Doors[doorIndex].spawnedDoor = spawnedDoor;
+
+
+            //build graph.. we know...
+            //instantiatedNewRoom and doorForProcessing.parent are the only two rooms that share the connection we just made so...
+            //we also know instantiedNewRoom is brand new and has no other connections, we we can use that directly,
+            //however we need to search for doorForProcessing.parent in the roomsList first as it could have more connections already, if it does, we need to add the connection
+            //betwen it and
+
+            GraphNode newNode = new GraphNode();
+            newNode.data = instantiatedNewRoom; //connect it both ways, so we access the data from the node, and the node from the data...
+            instantiatedNewRoom.node = newNode; 
+            //grab the node of the room we are connecting to
+            GraphNode lastNode = doorForProcessing.parent.node;
+            newNode.depth = lastNode.depth + 1;
+            if(newNode.depth > highestDepth) highestDepth = newNode.depth; //store the highest depth, used for debugging
+
+            //make a connection for the two of them
+            GraphConnection con = new GraphConnection();
+            con.a = lastNode; //store the connections to the rooms
+            con.b = newNode; 
+            con.open = true;
+            con.doorRef = doorForProcessing; //this needs a reference to the door geometry, as we need to be able to...unlock it visually? We could hook it up to a data ref, which then has a ref to geometry too but that seems painfully overcomplicated
+
+            lastNode.connections.Add(con); //store the connections both ways
+            newNode.connections.Add(con);
+
+            DungeonGraph.Add(newNode);
         }
 
         //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)
         private void PostGeneration() {
-            Debug.Log("Dungeon Generator:: Post Generation Starting. Computing Doors, Dungeon Graph, Etc");
 
-            //Spawn in doors.
-            Debug.Log("Doors: " + AllDoorsData.Count);
-            for(int i = 0; i < AllDoorsData.Count; i++) {
-                int ri = rand.Next(0, generatorSettings.doors.Count); //get a random start room
-                GameObject doorToSpawn = generatorSettings.doors[ri];
-                GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, AllDoorsData[i].position - (AllDoorsData[i].direction * 0.5f), Quaternion.LookRotation(AllDoorsData[i].direction), this.transform);
-
-                AllDoors.Add(spawnedDoor);
+            //Locking random doors
+            int r = rand.Next(5) + 1;
+            Debug.Log("r: " + r);
+            for(int i = 0; i < r; i++) {
+                //get a random door
+                int rr = rand.Next(DungeonGraph.Count);
+                GraphNode n = DungeonGraph[rr];
+                int rc = rand.Next(n.connections.Count);
+                DungeonGraph[rr].connections[rc].open = false;
             }
+            
 
-            //need to generate dungeon graph.  This is a (linked) list of all the rooms and how they are connected together, and the doors they share.
+
+            //Debug.Log("Walked DungeonGraph, max depth was: " + maxDepth);
+
+
+            Debug.Log("Dungeon Generator:: Post Generation Starting. ");
 
             //let the user hook in here once it's all done
             if(OnComplete != null) OnComplete(this);
@@ -410,6 +469,13 @@ namespace DMDungeonGenerator {
             return m.MultiplyVector(localDir);
         }
 
+        private void ColorChildren(Transform t, Color c) {
+            List<Renderer> childMats = t.GetComponentsInChildren<Renderer>().ToList();
+            for(int i = 0; i < childMats.Count; i++) {
+                childMats[i].material.color = c;
+            }
+        }
+
         private void OnDrawGizmos() {
 
             Gizmos.color = Color.blue;
@@ -429,6 +495,66 @@ namespace DMDungeonGenerator {
                 Gizmos.color = Color.cyan;
                 for(int i = 0; i < AllDoorsData.Count; i++) {
                     Gizmos.DrawWireCube(AllDoorsData[i].position, Vector3.one);
+                }
+            }
+
+
+            if(drawGraph ) {
+
+                for(int i = 0; i < DungeonGraph.Count; i++) {
+
+                    Vector3 offset = new Vector3(0f, 0f, 0f);
+                    Vector3 pos = DungeonGraph[i].data.transform.position + offset;
+                    float s = 0.4f;
+                    if(i == 0) {
+                        Gizmos.color = Color.blue;
+                        s = 1f;
+                    } else {
+                        Gizmos.color = Color.green;
+                        s = 0.4f;
+                    }
+
+                    //Gizmos.DrawWireSphere(pos, s / 2f);
+
+                    Color roomCol = debugGradient.Evaluate(((float)DungeonGraph[i].depth)/ highestDepth);
+                    if(i == 0) roomCol = Color.blue;
+                    ColorChildren(DungeonGraph[i].data.gameObject.transform, roomCol);
+
+#if UNITY_EDITOR
+                    if(drawDepthLabels) {
+                        GUIStyle style = new GUIStyle();
+                        style.fontSize = 20;
+                        style.normal.textColor = Color.white;
+
+                        UnityEditor.Handles.Label(pos + new Vector3(0f, 1f, 0f), DungeonGraph[i].depth.ToString(), style);
+                    }
+#endif
+                    s = 0.4f;
+                    //since we have cyclic references, this will be drawn twice...
+                    for(int j = 0; j < DungeonGraph[i].connections.Count; j++) {
+                        GraphConnection c = DungeonGraph[i].connections[j];
+                        if(c.open) Gizmos.color = Color.green;
+                        else Gizmos.color = Color.red;
+
+                        ColorChildren(c.doorRef.spawnedDoor.transform, Gizmos.color);
+
+                        Door doorRef = DungeonGraph[i].connections[j].doorRef;
+                        Vector3 dPos = doorRef.spawnedDoor.transform.position + offset;
+
+                        //Gizmos.DrawWireCube(dPos, new Vector3(s,s,s));
+
+
+                        Vector3 posStart = c.a.data.transform.position;
+                        Vector3 posEnd = c.b.data.transform.position;
+
+                        float l = ((float)DungeonGraph[i].depth) / highestDepth;
+                        Color col = debugGradient.Evaluate(l);
+                        col = Color.green;
+                        Gizmos.color = col;
+                        Gizmos.DrawLine(posStart + offset, dPos);
+                        Gizmos.DrawLine(posEnd + offset, dPos);
+
+                    }
                 }
             }
         }

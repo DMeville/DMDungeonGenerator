@@ -8,6 +8,8 @@ namespace DMDungeonGenerator {
         public Vector3 direction; //direction the door points.  position + direction gives the local voxel the door leads into.
         public RoomData parent; //the roomdata this door belongs to, we need this to compute rotations and stuff
 
+        public GameObject spawnedDoor;
+
         public Door(Vector3 pos, Vector3 dir, RoomData parent) {
             position = pos;
             direction = dir;

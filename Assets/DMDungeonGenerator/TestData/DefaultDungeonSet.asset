@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Default
   description: Enter any text here
-  TargetRooms: 40
-  minRooms: 25
+  TargetRooms: 100
+  minRooms: 10
   spawnRooms:
   - {fileID: 5149821279653870777, guid: 1741633871885004d96a48054114f0cc, type: 3}
   possibleRooms:

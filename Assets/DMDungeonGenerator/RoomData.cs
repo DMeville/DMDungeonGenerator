@@ -13,6 +13,7 @@ namespace DMDungeonGenerator {
         public static bool DrawRoomBounds = false;
         public static bool DrawVolumes = true;
 
+        public GraphNode node;
 
         [HideInInspector]
         public float rotation = 0f; //used to store the rotation value once this room is committed
