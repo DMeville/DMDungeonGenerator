@@ -439,8 +439,9 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   drawGlobalVoxels: 0
   drawAllDoors: 0
-  drawGraph: 0
-  drawDepthLabels: 1
+  drawGraph: 1
+  drawDepthLabels: 0
+  colourRoomsWithDepth: 0
   DungeonGraph: []
 --- !u!4 &1647662048
 Transform:
