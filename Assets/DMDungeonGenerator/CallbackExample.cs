@@ -16,8 +16,6 @@ public class CallbackExample : MonoBehaviour
     }
 
     public void GeneratorComplete(DMDungeonGenerator.DungeonGenerator generator) {
-        Debug.Log("Generator complete!");
+        Debug.Log("CallbackExample::Generator complete!");
     }
-
-
 }

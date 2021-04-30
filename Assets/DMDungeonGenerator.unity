@@ -399,8 +399,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19ad1a4848c45a64f87e00146d95ce58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  randomSeedOnStart: 1
-  randomSeed: 333
+  randomSeedOnStart: 0
+  randomSeed: 8520
   generationComplete: 1
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
@@ -439,8 +439,9 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   drawGlobalVoxels: 0
   drawAllDoors: 0
-  drawGraph: 1
-  drawDepthLabels: 0
+  drawGraph: 0
+  drawDepthLabels: 1
+  DungeonGraph: []
 --- !u!4 &1647662048
 Transform:
   m_ObjectHideFlags: 0

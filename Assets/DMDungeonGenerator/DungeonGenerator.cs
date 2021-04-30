@@ -76,6 +76,7 @@ namespace DMDungeonGenerator {
         public bool drawAllDoors = false;
         public bool drawGraph = false;
         public bool drawDepthLabels = false;
+        public bool colourRoomsWithDepth = false;
 
         public List<GraphNode> DungeonGraph = new List<GraphNode>();
 
@@ -351,17 +352,27 @@ namespace DMDungeonGenerator {
         //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)
         private void PostGeneration() {
 
-            //Locking random doors
-            int r = rand.Next(5) + 1;
-            Debug.Log("r: " + r);
-            for(int i = 0; i < r; i++) {
-                //get a random door
-                int rr = rand.Next(DungeonGraph.Count);
-                GraphNode n = DungeonGraph[rr];
-                int rc = rand.Next(n.connections.Count);
-                DungeonGraph[rr].connections[rc].open = false;
-            }
-            
+            ////example showing how lock random doors
+            ////Locking random doors
+            //int r = rand.Next(5) + 1;
+            //for(int i = 0; i < r; i++) {
+            //    //get a random door
+            //    int rr = rand.Next(DungeonGraph.Count);
+            //    GraphNode n = DungeonGraph[rr];
+            //    int rc = rand.Next(n.connections.Count);
+            //    DungeonGraph[rr].connections[rc].open = false;
+            //}
+
+
+            ////Example showing how to choose two random rooms, and see if a path exsists between the two; this is used for checking if the dungeon is solvable, does not actually return any path
+            ////get two random rooms, try and pathfind between them
+            //int ra = rand.Next(DungeonGraph.Count);
+            //int rb = rand.Next(DungeonGraph.Count);
+
+            //bool hasPath = HasPath(DungeonGraph[ra], DungeonGraph[rb]);
+            ////ColorChildren(DungeonGraph[ra].data.gameObject.transform, Color.magenta);
+            ////ColorChildren(DungeonGraph[rb].data.gameObject.transform, Color.black);
+            //Debug.Log("Found path: " + hasPath);
 
 
             //Debug.Log("Walked DungeonGraph, max depth was: " + maxDepth);
@@ -476,6 +487,69 @@ namespace DMDungeonGenerator {
             }
         }
 
+        /// <summary>
+        /// Finds a path between the start and end nodes.  Interally, we don't need to use the path for anything, but we just need to make sure a path exsists, otherwise the graph is not solveable
+        /// This is used for keys and locked doors and stuff like that
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        public bool HasPath(GraphNode start, GraphNode end) {
+            //iterate through the graph to zero it out
+            for(int i = 0; i < DungeonGraph.Count; i++) {
+                DungeonGraph[i].pathfindingWeight = -1f; //-1f means "not processed"
+                DungeonGraph[i].pathfindingProcessed = false;
+            }
+
+            List<GraphNode> nodesToProcess = new List<GraphNode>();
+            nodesToProcess.Add(start);
+            start.pathfindingWeight = 0f;
+            start.pathfindingProcessed = true;
+
+
+            //do a flood fill starting from start room, increasing the depth every step
+            //for(int i = 0; i < nodesToProcess.Count; i++) {
+            //ColorChildren(start.data.gameObject.transform, Color.cyan);
+            //this is infinite looping
+            while(nodesToProcess.Count > 0) {
+                GraphNode nodeToProcess = nodesToProcess[0];
+                nodesToProcess.RemoveAt(0);
+                nodeToProcess.pathfindingProcessed = true;
+
+                for(int j = 0; j < nodeToProcess.connections.Count; j++) {
+
+                    if(nodeToProcess.connections[j].open) {
+
+                        GraphConnection c = nodeToProcess.connections[j];
+                        if(!c.a.pathfindingProcessed) {
+                            //a has not been processed, so add it to the "rooms to process" and set it's weight accordingly
+                            c.a.pathfindingWeight = nodeToProcess.pathfindingWeight + 1f;
+                            //c.a.pathfindingProcessed = true;
+                            nodesToProcess.Add(c.a);
+                            //ColorChildren(c.a.data.transform, Color.red);
+                        }
+
+                        if(!c.b.pathfindingProcessed) {
+                            //a has not been processed, so add it to the "rooms to process" and set it's weight accordingly
+                            c.b.pathfindingWeight = nodeToProcess.pathfindingWeight + 1f;
+                            //c.a.pathfindingProcessed = true;
+                            nodesToProcess.Add(c.b);
+                            //ColorChildren(c.b.data.transform, Color.green);
+
+                        }
+                    } else {
+                        //can't add this one as the way is closed!
+                    }
+                }
+            }
+
+            bool foundPath = false;
+            if(end.pathfindingWeight != -1) {
+                foundPath = true;
+            }
+            return foundPath;
+        }
+
         private void OnDrawGizmos() {
 
             Gizmos.color = Color.blue;
@@ -498,6 +572,23 @@ namespace DMDungeonGenerator {
                 }
             }
 
+#if UNITY_EDITOR
+            if(drawDepthLabels) {
+                GUIStyle style = new GUIStyle();
+                style.fontSize = 20;
+                style.normal.textColor = Color.red;
+
+                for(int i = 0; i < DungeonGraph.Count; i++) {
+                    Vector3 offset = new Vector3(0f, 0f, 0f);
+                    Vector3 pos = DungeonGraph[i].data.transform.position + offset;
+
+                    string label = DungeonGraph[i].depth.ToString();
+                    label = DungeonGraph[i].pathfindingWeight.ToString();
+
+                    UnityEditor.Handles.Label(pos + new Vector3(0f, 0.1f, 0f), label, style);
+                }
+            }
+#endif
 
             if(drawGraph ) {
 
@@ -518,17 +609,9 @@ namespace DMDungeonGenerator {
 
                     Color roomCol = debugGradient.Evaluate(((float)DungeonGraph[i].depth)/ highestDepth);
                     if(i == 0) roomCol = Color.blue;
-                    ColorChildren(DungeonGraph[i].data.gameObject.transform, roomCol);
+                    if(colourRoomsWithDepth) ColorChildren(DungeonGraph[i].data.gameObject.transform, roomCol);
 
-#if UNITY_EDITOR
-                    if(drawDepthLabels) {
-                        GUIStyle style = new GUIStyle();
-                        style.fontSize = 20;
-                        style.normal.textColor = Color.white;
 
-                        UnityEditor.Handles.Label(pos + new Vector3(0f, 1f, 0f), DungeonGraph[i].depth.ToString(), style);
-                    }
-#endif
                     s = 0.4f;
                     //since we have cyclic references, this will be drawn twice...
                     for(int j = 0; j < DungeonGraph[i].connections.Count; j++) {
@@ -536,12 +619,12 @@ namespace DMDungeonGenerator {
                         if(c.open) Gizmos.color = Color.green;
                         else Gizmos.color = Color.red;
 
-                        ColorChildren(c.doorRef.spawnedDoor.transform, Gizmos.color);
+                        if(colourRoomsWithDepth) ColorChildren(c.doorRef.spawnedDoor.transform, Gizmos.color);
 
                         Door doorRef = DungeonGraph[i].connections[j].doorRef;
                         Vector3 dPos = doorRef.spawnedDoor.transform.position + offset;
 
-                        //Gizmos.DrawWireCube(dPos, new Vector3(s,s,s));
+                        if(!c.open) Gizmos.DrawWireCube(dPos, new Vector3(s,s,s));
 
 
                         Vector3 posStart = c.a.data.transform.position;
