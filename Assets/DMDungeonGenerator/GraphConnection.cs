@@ -6,6 +6,7 @@ namespace DMDungeonGenerator {
     [System.Serializable]
     public class GraphConnection {
         public bool open = true; //can this be walked over, or is it "locked" (via a key or something)
+        public int keyID = 0;
         //public List<GraphNode> connections = new List<GraphNode>();
 
         [System.NonSerialized]

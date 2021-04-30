@@ -12,8 +12,12 @@ public class RoomDataEditor: Editor {
 
     public static EditingMode mode = EditingMode.None;
     private bool invert = false;
+    
+    public float transparency = 0.2f;
     public override void OnInspectorGUI() {
         mode = (EditingMode)EditorGUILayout.EnumPopup("EditingMode: ", mode);
+        EditorGUILayout.LabelField("Transparency: ");
+        transparency = EditorGUILayout.Slider(transparency, 0f, 0.25f);
         base.OnInspectorGUI();
     }
 
@@ -26,7 +30,7 @@ public class RoomDataEditor: Editor {
         float voxelScale = DMDungeonGenerator.DungeonGenerator.voxelScale;
 
         for(int i = 0; i < vox.Count; i++) {
-            Handles.color = new Color(1f, 1f, 1f, 0.2f);
+            Handles.color = new Color(1f, 1f, 1f, transparency);
             Vector3 pos = vox[i].position;
             Handles.CubeHandleCap(-1, data.transform.TransformPoint((pos*voxelScale)), data.transform.rotation, voxelScale, EventType.Repaint);
         }
