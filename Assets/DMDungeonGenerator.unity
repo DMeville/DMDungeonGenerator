@@ -141,7 +141,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!81 &124445731
 AudioListener:
   m_ObjectHideFlags: 0
@@ -442,6 +442,7 @@ MonoBehaviour:
   drawGraph: 1
   drawDepthLabels: 0
   colourRoomsWithDepth: 0
+  colourLockedDoors: 1
   graphConnectionColor: {r: 1, g: 1, b: 1, a: 1}
   globalVoxelColor: {r: 1, g: 1, b: 1, a: 0.22745098}
   drawKeyLocksLabels: 1
@@ -473,3 +474,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generator: {fileID: 1647662047}
+  PlayerPrefab: {fileID: 374109433352817464, guid: 4168a1c5b47b6244cbf55fadeb19c7ba, type: 3}
+  spawnedPlayer: {fileID: 0}
+  KeyPrefab: {fileID: 117974594982845708, guid: 206c6c81cb8764f4b8f4d3e452159c3e, type: 3}

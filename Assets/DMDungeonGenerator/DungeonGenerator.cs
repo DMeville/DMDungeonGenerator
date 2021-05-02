@@ -77,6 +77,7 @@ namespace DMDungeonGenerator {
         public bool drawGraph = false;
         public bool drawDepthLabels = false;
         public bool colourRoomsWithDepth = false;
+        public bool colourLockedDoors = false;
         public Color graphConnectionColor;
         public Color globalVoxelColor;
         public bool drawKeyLocksLabels = false;
@@ -317,7 +318,8 @@ namespace DMDungeonGenerator {
             //spawn in door geometry
             int di = rand.Next(0, generatorSettings.doors.Count); //get a random door from the list
             GameObject doorToSpawn = generatorSettings.doors[di];
-            GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f), Quaternion.LookRotation(doorForProcessing.direction), this.transform);
+            Vector3 doorOffset = new Vector3(0f, 0.5f, 0f); //to offset it so the gameobject pivot is on the bottom edge of the voxel
+            GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f) - doorOffset , Quaternion.LookRotation(doorForProcessing.direction), this.transform);
             doorForProcessing.spawnedDoor = spawnedDoor; 
 
             //need to link up the doors to the roomData's too?
@@ -349,7 +351,7 @@ namespace DMDungeonGenerator {
 
             lastNode.connections.Add(con); //store the connections both ways
             newNode.connections.Add(con);
-
+            spawnedDoor.GetComponent<GeneratorDoor>().data = con;
             DungeonGraph.Add(newNode);
         }
 
@@ -706,7 +708,8 @@ namespace DMDungeonGenerator {
                         if(c.open) Gizmos.color = Color.green;
                         else Gizmos.color = Color.red;
 
-                        if(colourRoomsWithDepth) ColorChildren(c.doorRef.spawnedDoor.transform, Gizmos.color);
+
+                        if(colourLockedDoors) ColorChildren(c.doorRef.spawnedDoor.transform, Gizmos.color);
 
                         Door doorRef = DungeonGraph[i].connections[j].doorRef;
                         Vector3 dPos = doorRef.spawnedDoor.transform.position + offset;
