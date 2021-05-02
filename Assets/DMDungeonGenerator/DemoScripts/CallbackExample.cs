@@ -33,6 +33,8 @@ public class CallbackExample : MonoBehaviour
             for(int j = 0; j < room.keyIDs.Count; j++) {
                 GameObject k = GameObject.Instantiate(KeyPrefab, room.data.transform.position, Quaternion.identity);
                 k.GetComponent<DemoKeyPickup>().keyID = room.keyIDs[j];
+                k.GetComponentInChildren<Renderer>().material.color = DMDungeonGenerator.DungeonGenerator.GetKeyColor(room.keyIDs[j]);
+                k.GetComponentInChildren<Light>().color = DMDungeonGenerator.DungeonGenerator.GetKeyColor(room.keyIDs[j]);
                 keys.Add(k);
             }
         }
