@@ -26,7 +26,7 @@ namespace DMDungeonGenerator {
         /// Hook into this to do any dungeon postprocessing, like grabbing the list of all the rooms that were generated and choosing one as a boss room, etc
         /// </summary>
         public Action<DungeonGenerator> OnComplete;
-        private System.Random rand;
+        public System.Random rand;
 
         /// <summary>
         /// WARNING!!! voxelScale can not be changed at runtime, and changing this after you have already laid out your room geometry will break everything, as room geometry 
@@ -364,79 +364,7 @@ namespace DMDungeonGenerator {
 
             //example showing how lock random doors
             //Locking random doors
-            { //this should all be extracted into the CallbackExample, as we don't _really_ want to do this internally, as the spawning logic for where/how many keys could change depending on game/dungeon/anything so it shoudl be exposed
-                int totalKeys = 0;
-                int r = rand.Next(10) + 5;
-
-                //r = 1;
-                for(int i = 0; i < r; i++) {
-                    //get a random door
-                    int rr = rand.Next(DungeonGraph.Count);
-                    GraphNode n = DungeonGraph[rr];
-                    int rc = rand.Next(n.connections.Count);
-                    if(!DungeonGraph[rr].connections[rc].open) continue;
-                    DungeonGraph[rr].connections[rc].open = false;
-                    DungeonGraph[rr].connections[rc].keyID = totalKeys;
-
-                    //also need to choose a room in which the key is available
-                    //lets just place it in the room with the lowest depth that is connected to the locked door
-
-                    GraphConnection con = DungeonGraph[rr].connections[rc];
-                    GraphNode keyRoom;
-                    if(con.a.depth < con.b.depth) {
-                        //place key in ROOM A, as it is on the close side towards spawn
-                        keyRoom = con.a;
-                    } else {
-                        keyRoom = con.b;
-                    }
-
-                    //we now can "walk" the key around a random number of steps
-                    //a few rules about this.
-                    //1) A key can go to any room via the key room's connections
-                    //2) It can NOT go through locked doors, we don't solve if "you would have this key so you could pass this door"
-                    //2) It CAN go through locked doors only if it's going through that locked door in the "right" way, eg, key Room with depth 1 -> Locked door -> room with depth 0
-
-                    //this works, it seems that a good chunk of the keys are staying in the same room they spawn in though...
-                    //might be stepping back and forth?
-                    int randomSteps = rand.Next(25);
-                    for(int s = 0; s < randomSteps; s++) {
-                        //lets get a list of all the random steps we can take, then choose one at random
-                        List<GraphConnection> pos = new List<GraphConnection>();
-                        for(int c = 0; c < keyRoom.connections.Count; c++) {
-                            GraphConnection gc = keyRoom.connections[c];
-                            if(gc.open) {
-                                pos.Add(gc); //add this connection as it is not locked
-                            } else {
-                                //room is locked, can we still move down it? 
-                                //eg, is the room in the connection that is NOT us, at a lower depth?
-                                GraphNode other;
-                                if(gc.a == keyRoom) {
-                                    other = gc.b;
-                                } else {
-                                    other = gc.a;
-                                }
-                                if(other.depth < keyRoom.depth) {
-                                    pos.Add(gc);
-                                }
-                            }
-                        }
-                        int conIndex = rand.Next(pos.Count);
-                        GraphConnection selected = pos[conIndex];
-
-
-                        //key room is now whatever room in selected that is not keyroom
-                        if(selected.a == keyRoom) {
-                            keyRoom = selected.b;
-                        } else {
-                            keyRoom = selected.a;
-                        }
-
-                    }
-
-                    keyRoom.keyIDs.Add(totalKeys);
-                    totalKeys++;
-                }
-            }
+            
 
 
             ////Example showing how to choose two random rooms, and see if a path exsists between the two; this is used for checking if the dungeon is solvable, does not actually return any path
