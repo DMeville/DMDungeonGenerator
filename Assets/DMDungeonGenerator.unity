@@ -407,7 +407,7 @@ MonoBehaviour:
   AllDoorsData: []
   AllDoors: []
   generateInUpdate: 1
-  generationTimer: 0.1
+  generationTimer: 0.01
   debugGradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}

@@ -14,6 +14,7 @@ public class DemoPlayer : MonoBehaviour
     private Rigidbody rb;
     public CharacterController cc;
     private float gravity = 0f;
+    public float gravityForce = -9.81f;
 
     public static List<int> keysFound = new List<int>();
 
@@ -40,10 +41,8 @@ public class DemoPlayer : MonoBehaviour
         float z = Input.GetAxis("Vertical");
 
         Vector3 move = x * transform.right + z * transform.forward;
-        gravity = -9.81f;
-        move += new Vector3(0f, gravity, 0f);
-        //rb.MovePosition(move);
-        cc.Move(move * moveSpeed * Time.deltaTime) ;
+        gravity = gravityForce;
+        cc.Move(((move * moveSpeed) + new Vector3(0f, gravity, 0f))* Time.deltaTime) ;
         if(cc.isGrounded) gravity = 0f;
 
        

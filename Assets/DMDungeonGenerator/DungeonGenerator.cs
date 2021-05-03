@@ -50,7 +50,7 @@ namespace DMDungeonGenerator {
         public List<GameObject> AllRooms = new List<GameObject>();
         [HideInInspector]
         public List<Door> AllDoorsData = new List<Door>(); //these are in local space
-        public List<GameObject> AllDoors = new List<GameObject>();
+        //public List<GameObject> AllDoors = new List<GameObject>();
 
         /// <summary>
         /// The voxel grid we use for computing overlaps. Access it with a vector3 pos (must be RoundedToInt) via IsVoxelOccupied instead of directly
@@ -217,7 +217,7 @@ namespace DMDungeonGenerator {
             Vector3 targetWorldDoorDir = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation); //the target voxel we're going to align to
 
             Door doorForProcessing = new Door(targetWorldVoxPos, targetWorldDoorDir, targetDoor.parent); //why do I do this instead of using targetDoor directly...?
-            AllDoorsData.Add(doorForProcessing);
+            //AllDoorsData.Add(doorForProcessing);
 
             List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
@@ -323,7 +323,7 @@ namespace DMDungeonGenerator {
             doorForProcessing.spawnedDoor = spawnedDoor; 
 
             //need to link up the doors to the roomData's too?
-            AllDoors.Add(spawnedDoor);
+            //AllDoors.Add(spawnedDoor);
 
             //instantiatedNewRoom.Doors[doorIndex].spawnedDoor = spawnedDoor;
 

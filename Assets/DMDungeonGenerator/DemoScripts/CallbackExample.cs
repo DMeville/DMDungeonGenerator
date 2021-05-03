@@ -49,6 +49,8 @@ public class CallbackExample : MonoBehaviour
         SpawnKeys(); //spawn the gameobjets using the computed data
 
         ChooseEndRoom();
+        //color the spawn room green
+        generator.DungeonGraph[0].data.GetComponent<GameplayRoom>().ColorRoom(Color.green);
 
         //spawn the player in the first room somewhere
         Vector3 spawnRoomPos = generator.DungeonGraph[0].data.gameObject.transform.position;
@@ -163,7 +165,7 @@ public class CallbackExample : MonoBehaviour
     public void ChooseEndRoom() {
         List<GraphNode> possibleRooms = new List<GraphNode>();
         for(int i = 0; i < generator.DungeonGraph.Count; i++) {
-            if(generator.DungeonGraph[i].connections.Count == 1) {
+            if(generator.DungeonGraph[i].connections.Count == 3) {
                 possibleRooms.Add(generator.DungeonGraph[i]);
             }
         }

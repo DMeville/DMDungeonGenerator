@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Default
   description: Enter any text here
-  TargetRooms: 20
+  TargetRooms: 50
   minRooms: 5
   spawnRooms:
   - {fileID: 4671341197351391010, guid: 67278d84de69a594fa7262753664b6e0, type: 3}
@@ -24,6 +24,7 @@ MonoBehaviour:
   - {fileID: 5501150146831203405, guid: a5c91660b1d52494bb64795a0e34c3a1, type: 3}
   - {fileID: 8253573908122011097, guid: a6dd5c08e68f21143a857c9910cf0964, type: 3}
   - {fileID: 715781163541446826, guid: bf761ad46935305488299e276fb01e49, type: 3}
+  - {fileID: 715781163541446826, guid: 012c5c7de4eeb8443ba9c72055d49b52, type: 3}
   deadendRooms:
   - {fileID: 5883593812307289775, guid: 5d154a66dcae142498790142a90718e5, type: 3}
   doors:
