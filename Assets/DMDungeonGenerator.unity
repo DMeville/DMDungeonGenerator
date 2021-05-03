@@ -399,7 +399,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19ad1a4848c45a64f87e00146d95ce58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  randomSeedOnStart: 0
+  randomSeedOnStart: 1
   randomSeed: 8520
   generationComplete: 1
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
@@ -439,10 +439,10 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   drawGlobalVoxels: 0
   drawAllDoors: 0
-  drawGraph: 1
+  drawGraph: 0
   drawDepthLabels: 0
   colourRoomsWithDepth: 0
-  colourLockedDoors: 1
+  colourLockedDoors: 0
   graphConnectionColor: {r: 1, g: 1, b: 1, a: 1}
   globalVoxelColor: {r: 1, g: 1, b: 1, a: 0.22745098}
   drawKeyLocksLabels: 1
@@ -477,3 +477,6 @@ MonoBehaviour:
   PlayerPrefab: {fileID: 374109433352817464, guid: 4168a1c5b47b6244cbf55fadeb19c7ba, type: 3}
   spawnedPlayer: {fileID: 0}
   KeyPrefab: {fileID: 117974594982845708, guid: 206c6c81cb8764f4b8f4d3e452159c3e, type: 3}
+  keys: []
+  keysToSpawnMin: 5
+  keysToSpawnMax: 10

@@ -489,6 +489,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4059847582379427378}
   - component: {fileID: 6448509678560450237}
+  - component: {fileID: -6785533711779140102}
   m_Layer: 0
   m_Name: DeadEndRoom
   m_TagString: Untagged
@@ -538,6 +539,18 @@ MonoBehaviour:
     data: {fileID: 0}
     connections: []
   rotation: 0
+--- !u!114 &-6785533711779140102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5883593812307289775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61896ee2abd96044ea7e2a265ea45049, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7422683660309383238
 GameObject:
   m_ObjectHideFlags: 0

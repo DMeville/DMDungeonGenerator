@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 
@@ -36,6 +37,13 @@ public class GameplayDoor : MonoBehaviour
     private void OnTriggerExit(Collider other) {
         if(other.gameObject.tag == "Player") {
             doorMesh.gameObject.SetActive(true);
+        }
+    }
+
+    public void LockDoor() {
+        List<Renderer> childMats = this.GetComponentsInChildren<Renderer>().ToList();
+        for(int i = 0; i < childMats.Count; i++) {
+            childMats[i].material.color = DMDungeonGenerator.DungeonGenerator.GetKeyColor(genDoor.data.keyID);
         }
     }
 }

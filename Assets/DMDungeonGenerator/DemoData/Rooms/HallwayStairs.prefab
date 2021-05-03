@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6926315873220862007}
   - component: {fileID: 87251918191947960}
+  - component: {fileID: 5371146885206478036}
   m_Layer: 0
   m_Name: HallwayStairs
   m_TagString: Untagged
@@ -68,6 +69,18 @@ MonoBehaviour:
     data: {fileID: 0}
     connections: []
   rotation: 0
+--- !u!114 &5371146885206478036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 715781163541446826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61896ee2abd96044ea7e2a265ea45049, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &5337278561559346035
 GameObject:
   m_ObjectHideFlags: 0
