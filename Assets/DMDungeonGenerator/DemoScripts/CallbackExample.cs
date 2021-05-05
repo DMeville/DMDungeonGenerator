@@ -17,9 +17,10 @@ public class CallbackExample : MonoBehaviour
     public int keysToSpawnMin = 5;
     public int keysToSpawnMax = 10;
 
-    void Start()
+    void Awake()
     {
         if(generator != null) {
+            Debug.Log("Registered post generation callback");
             generator.OnComplete += GeneratorComplete;
         }
     }
@@ -52,6 +53,12 @@ public class CallbackExample : MonoBehaviour
         //color the spawn room green
         generator.DungeonGraph[0].data.GetComponent<GameplayRoom>().ColorRoom(Color.green);
 
+        //iterate through all the rooms and call a "Init" method to set up random props
+        for(int i = 0; i < generator.DungeonGraph.Count; i++) {
+            OnInitRoomCallback(generator.DungeonGraph[i].data.gameObject, generator.rand);
+        }
+
+
         //spawn the player in the first room somewhere
         Vector3 spawnRoomPos = generator.DungeonGraph[0].data.gameObject.transform.position;
         spawnedPlayer = GameObject.Instantiate(PlayerPrefab, spawnRoomPos, Quaternion.identity);
@@ -78,7 +85,7 @@ public class CallbackExample : MonoBehaviour
             randomDoor.open = false;
             randomDoor.keyID = totalKeysGenerated;
             //callback to the spawned gameplay door to update it's colour, set up lock stuff on the door...
-            randomDoor.doorRef.spawnedDoor.gameObject.GetComponent<GameplayDoor>().LockDoor(); //(this could be nicer, not sure how tho)
+            OnLockDoorCallback(randomDoor.doorRef.spawnedDoor); //(this could be nicer, not sure how tho)
             //we now have the door data setup, we need to now select a room that will be marked with "spawn key with this id" _somewhere_ in this room
             //for this example, we just spawn it on the ground; but you could put it in a chest, you could mark your room monster spawners to give the key to an enemy to drop on death, etc.
 
@@ -173,5 +180,25 @@ public class CallbackExample : MonoBehaviour
         int randomSelected = generator.rand.Next(possibleRooms.Count);
         GameObject selectedRoom = possibleRooms[randomSelected].data.gameObject; //here we can get the gameobject of the room and any associated scripts on it...for this demo we're not doing anything, just gunna colour the room
         selectedRoom.GetComponent<GameplayRoom>().ColorRoom(Color.red);  
+    }
+
+    /// <summary>
+    /// EXAMPLE. 
+    /// This is called whenever we lock a door. Use the door gameobject to get any custom component on your object and hook into animation, or chaning the look of your door depending on it's state, etc.
+    ///  In this example we just change the colour on via our example gameplay script on the gameobject
+    /// </summary>
+    /// <param name="door"></param>
+    private void OnLockDoorCallback(GameObject door) {
+        door.gameObject.GetComponent<GameplayDoor>().LockDoor();
+    }
+
+    /// <summary>
+    /// Example.  Calling a method on every room to initialize it post generation.  Gunna use this to randomize some room props. Passing in the generator so we can grab it's System.random 
+    /// so props randomize the same for every generation that uses this seed
+    /// </summary>
+    /// <param name="room"></param>
+    /// <param name="generator"></param>
+    private void OnInitRoomCallback(GameObject room, System.Random rand) {
+        room.GetComponent<GameplayRoom>().Init(rand);
     }
 }

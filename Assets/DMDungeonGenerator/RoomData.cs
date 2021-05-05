@@ -17,7 +17,7 @@ namespace DMDungeonGenerator {
 
         [HideInInspector]
         public float rotation = 0f; //used to store the rotation value once this room is committed
-
+        public int roomTemplateID = 0; //auto generated at generation time
         /// <summary>
         /// This runs both in editor and in playmode as per ExecuteInEditMode.  
         /// This just ensures we always have at least one voxel in the list to build off of using the editor tools

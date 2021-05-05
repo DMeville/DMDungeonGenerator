@@ -16,7 +16,7 @@ public class GameplayDoor : MonoBehaviour
     //you could also trigger an animation opening the door, show some UI that says "Press <space> to Open door" etc etc
     //this is normal gameplay stuff
 
-    private void Start() {
+    private void Awake() {
         genDoor = this.GetComponent<DMDungeonGenerator.GeneratorDoor>();
     }
 
@@ -43,7 +43,8 @@ public class GameplayDoor : MonoBehaviour
     public void LockDoor() {
         List<Renderer> childMats = this.GetComponentsInChildren<Renderer>().ToList();
         for(int i = 0; i < childMats.Count; i++) {
-            childMats[i].material.color = DMDungeonGenerator.DungeonGenerator.GetKeyColor(genDoor.data.keyID);
+            int keyId = genDoor.data.keyID;
+            childMats[i].material.color = DMDungeonGenerator.DungeonGenerator.GetKeyColor(keyId);
         }
     }
 }

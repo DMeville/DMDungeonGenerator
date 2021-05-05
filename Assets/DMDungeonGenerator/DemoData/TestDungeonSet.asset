@@ -25,6 +25,8 @@ MonoBehaviour:
   - {fileID: 8253573908122011097, guid: a6dd5c08e68f21143a857c9910cf0964, type: 3}
   - {fileID: 715781163541446826, guid: bf761ad46935305488299e276fb01e49, type: 3}
   - {fileID: 715781163541446826, guid: 012c5c7de4eeb8443ba9c72055d49b52, type: 3}
+  - {fileID: 4671341197351391010, guid: 66c601cd79c269b45ba6ab68eb8de2a4, type: 3}
+  - {fileID: 5883593812307289775, guid: 4203946bcc8cea245b1d3ced4b9d597f, type: 3}
   deadendRooms:
   - {fileID: 5883593812307289775, guid: 5d154a66dcae142498790142a90718e5, type: 3}
   doors:

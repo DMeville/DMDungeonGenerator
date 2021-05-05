@@ -405,7 +405,6 @@ MonoBehaviour:
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
   AllDoorsData: []
-  AllDoors: []
   generateInUpdate: 1
   generationTimer: 0.01
   debugGradient:

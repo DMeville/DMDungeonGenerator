@@ -102,6 +102,12 @@ namespace DMDungeonGenerator {
             DMDebugTimer.Start();
             generationComplete = false;
 
+            //lets check the data first really quick, to make sure we're not missing any rooms or anything...
+            //spawn rooms:
+            bool hasErrors = CheckGeneratorData();
+            if(hasErrors) return;
+
+
             attempts = 1;
             do {
                 DestroyAllGeneratedRooms();
@@ -119,6 +125,14 @@ namespace DMDungeonGenerator {
         public void Update() {
             if(generateInUpdate) {
                 _generationTimer -= Time.deltaTime;
+
+
+                bool hasErrors = CheckGeneratorData();
+                if(hasErrors) { //break out here.  Shouldn't ever really generate in update unless debugging though tbh
+                    generateInUpdate = false;
+                    return;
+                }
+
                 if(_generationTimer <= 0f) {
                     _generationTimer = generationTimer;
 
@@ -174,6 +188,24 @@ namespace DMDungeonGenerator {
                 regenerateWithDifferentSeed = false;
             }
 
+            //assign every possible room a unique template ID, used for identifying room types later
+            int templateId = 0;
+            for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) {
+                generatorSettings.possibleRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
+                templateId++;
+            }
+            for(int i = 0; i < generatorSettings.spawnRooms.Count; i++) {
+                generatorSettings.spawnRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
+                templateId++;
+            }
+            for(int i = 0; i < generatorSettings.deadendRooms.Count; i++) {
+                generatorSettings.deadendRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
+                templateId++;
+            }
+
+
+
+
             rand = new System.Random(seed);
 
             int ri = rand.Next(0, generatorSettings.spawnRooms.Count); //get a random start room
@@ -222,7 +254,19 @@ namespace DMDungeonGenerator {
             List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
             //this ensures we don't try the same room over and over, and so we know when we have exhausted all the possiblities and just have to cap it off with a 1x1x1 vox room
+            
+            for(int i =0; i < roomsToTry.Count; i++) { //find the room template of the room we are trying to connect to, and remove that room template from the list of possible rooms to spawn
+                if(roomsToTry[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
+                    roomsToTry.RemoveAt(i); break;
+                }
+            }
             roomsToTry.Shuffle(rand); //shuffle this list so we dont always try the rooms in the same order.
+
+            for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) { //add back the room type we removed to the end of the (now shuffled) list, so that we try every other room first and only use this room as a last choice
+                if(generatorSettings.possibleRooms[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) {
+                    roomsToTry.Add(generatorSettings.possibleRooms[i]);
+                }
+            }
 
             if(AllRooms.Count + openSet.Count > targetRooms) {
                 roomsToTry.Clear();
@@ -553,6 +597,55 @@ namespace DMDungeonGenerator {
                 foundPath = true;
             }
             return foundPath;
+        }
+
+        private bool CheckGeneratorData() {
+            bool hasError = false;
+            if(generatorSettings.spawnRooms.Count == 0) {
+                hasError = true;
+                Debug.LogError("Dungeon Generator:: Data Issue! Spawn rooms list is empty (need at least one)!");
+            }
+            if(generatorSettings.possibleRooms.Count == 0) {
+                hasError = true;
+                Debug.LogError("Dungeon Generator:: Data Issue! Possible rooms list is empty (need at least one)!");
+            }
+            if(generatorSettings.deadendRooms.Count == 0) {
+                hasError = true;
+                Debug.LogError("Dungeon Generator:: Data Issue! Deadend rooms list is empty (need at least one)!");
+            }
+            if(generatorSettings.doors.Count == 0) {
+                hasError = true;
+                Debug.LogError("Dungeon Generator:: Data Issue! Doors list is empty (need at least one)!");
+            }
+            for(int i = 0; i < generatorSettings.spawnRooms.Count; i++) {
+                if(generatorSettings.spawnRooms[i] == null) {
+                    hasError = true;
+                    Debug.LogError("Dungeon Generator:: Data Issue! Spawm rooms list has a missing/null entry at index: " + i);
+                }
+            }
+            for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) {
+                if(generatorSettings.possibleRooms[i] == null) {
+                    hasError = true;
+                    Debug.LogError("Dungeon Generator:: Data Issue! Possible rooms list has a missing/null entry at index: " + i);
+                }
+            }
+            for(int i = 0; i < generatorSettings.deadendRooms.Count; i++) {
+                if(generatorSettings.deadendRooms[i] == null) {
+                    hasError = true;
+                    Debug.LogError("Dungeon Generator:: Data Issue! Deadend rooms list has a missing/null entry at index: " + i);
+                }
+            }
+            for(int i = 0; i < generatorSettings.doors.Count; i++) {
+                if(generatorSettings.doors[i] == null) {
+                    hasError = true;
+                    Debug.LogError("Dungeon Generator:: Data Issue! Deadend rooms list has a missing/null entry at index: " + i);
+                }
+            }
+
+            if(hasError) {
+                Debug.LogError("Dungeon Generator:: Data Issues found on dungeon set: [" + generatorSettings.name +"], fix these errors before proceeding!");
+            }
+            return hasError;
         }
 
         public static Color GetKeyColor(int keyID) {
