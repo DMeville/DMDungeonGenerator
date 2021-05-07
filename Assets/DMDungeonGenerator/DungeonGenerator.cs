@@ -254,8 +254,8 @@ namespace DMDungeonGenerator {
             List<GameObject> roomsToTry = new List<GameObject>(generatorSettings.possibleRooms);
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
             //this ensures we don't try the same room over and over, and so we know when we have exhausted all the possiblities and just have to cap it off with a 1x1x1 vox room
-            
-            for(int i =0; i < roomsToTry.Count; i++) { //find the room template of the room we are trying to connect to, and remove that room template from the list of possible rooms to spawn
+
+            for(int i = 0; i < roomsToTry.Count; i++) { //find the room template of the room we are trying to connect to, and remove that room template from the list of possible rooms to spawn
                 if(roomsToTry[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
                     roomsToTry.RemoveAt(i); break;
                 }
@@ -268,103 +268,139 @@ namespace DMDungeonGenerator {
                 }
             }
 
-            if(AllRooms.Count + openSet.Count > targetRooms) {
-                roomsToTry.Clear();
-                //Debug.Log("Ending Gen, Target rooms hit");
+            RoomData instantiatedNewRoom = null;
+            if(generatorSettings.useDeadendRooms) {
+                if(AllRooms.Count + openSet.Count >= targetRooms) {
+                    roomsToTry.Clear();
+                    //Debug.Log("Ending Gen, Target rooms hit");
+                }
+            } else {
+                if(AllRooms.Count >= targetRooms) {
+                    roomsToTry.Clear();
+                }
             }
 
-            int ri = rand.Next(0, generatorSettings.deadendRooms.Count); //get a random deadend room
-            roomsToTry.Add(generatorSettings.deadendRooms[ri]); //append the "singleVoxelRoom" as a last resort, this room will fit in ALL cases
+            if(generatorSettings.useDeadendRooms) {//append this to the end of the roomsToTryList
+                int ri = rand.Next(0, generatorSettings.deadendRooms.Count); //get a random deadend room
+                roomsToTry.Add(generatorSettings.deadendRooms[ri]); //append the "singleVoxelRoom" as a last resort, this room will fit in ALL cases
+            }
 
-            //data we will have once we find a room, used for spawning the room into the world
-            RoomData newRoom = null;
-            Vector3 computedRoomOffset = Vector3.zero;
-            int doorIndex = 0;
-            float computedRoomRotation = 0f;
-            bool anyOverlaps = false;
+            //roomsToTry list MIGHT be empty, if so we just don't spawn a room, spawn a door and a halfempty connection
+            bool makeRoomDeadend = false;
+            if(roomsToTry.Count == 0) makeRoomDeadend = true;
 
-            //start
-            do {
-                newRoom = roomsToTry[0].GetComponent<RoomData>();
-                roomsToTry.RemoveAt(0);
 
-                List<int> doorsToTry = new List<int>();
-                for(int i = 0; i < newRoom.Doors.Count; i++) {
-                    doorsToTry.Add(i);
-                }
-                doorsToTry.Shuffle(rand); //same thing here with the doorors as with the rooms. Copy the list so we can exaust our options, shuffle it so we never try in the same order
+            if(!makeRoomDeadend) //spawn rooms like normal
+            { 
+                //data we will have once we find a room, used for spawning the room into the world
+                RoomData newRoom = null;
+                Vector3 computedRoomOffset = Vector3.zero;
+                int doorIndex = 0;
+                float computedRoomRotation = 0f;
+                bool anyOverlaps = false;
 
-                do { //try all the different doors in different orientations
-                    doorIndex = doorsToTry[0]; //get first doorIndex (has been shuffled)
-                    doorsToTry.RemoveAt(0); 
-
-                    Door newDoor = newRoom.Doors[doorIndex]; 
-                    Vector3 targetDoorDir = targetWorldDoorDir; 
-                    computedRoomRotation = GetRoomRotation(targetDoorDir, newDoor); //computes the rotation of the room so that the door we've selected to try lines up properly to the door we are wanting to connect to
-                    Vector3 sDLocalWithRotation = GetVoxelWorldPos(newDoor.position, computedRoomRotation);
-                    computedRoomOffset = targetWorldVoxPos - sDLocalWithRotation; //the computed offset we need to apply to the room gameobject so that the doors align
-
-                 
-                    List<Vector3> worldVoxels = new List<Vector3>(); //check for overlaps with all of these. MUST BE Mathf.RoundToInt so that the vectors are not like 0.999999999 due to precision issues
-                    for(int i = 0; i < newRoom.LocalVoxels.Count; i++) { 
-                        Vector3 v = GetVoxelWorldPos(newRoom.LocalVoxels[i].position, computedRoomRotation) + computedRoomOffset; //all the room voxels
-                        worldVoxels.Add(v);
+                //start
+                do {
+                    //it's possible that we try every room and none fit, especially if we don't have any deaded rooms that _should_ fit in any situation.
+                    //so if the list is empty, just break out
+                    if(roomsToTry.Count == 0) {
+                        makeRoomDeadend = true;
+                        break;
                     }
 
+                    newRoom = roomsToTry[0].GetComponent<RoomData>();
+                    roomsToTry.RemoveAt(0);
+
+                    List<int> doorsToTry = new List<int>();
                     for(int i = 0; i < newRoom.Doors.Count; i++) {
-                        if(i != doorIndex) { //all the door voxels (except the one we're currently working on/linking up to another room).
-                            //We need to do this to so that we don't PLACE this room in a spot where the doors of this room have no space for at least a 1x1x1 room (eg, opening a door directly into a wall)
-                            Vector3 v = GetVoxelWorldPos((newRoom.Doors[i].position + newRoom.Doors[i].direction), computedRoomRotation) + computedRoomOffset;
+                        doorsToTry.Add(i);
+                    }
+                    doorsToTry.Shuffle(rand); //same thing here with the doorors as with the rooms. Copy the list so we can exaust our options, shuffle it so we never try in the same order
+
+                    do { //try all the different doors in different orientations
+                        doorIndex = doorsToTry[0]; //get first doorIndex (has been shuffled)
+                        doorsToTry.RemoveAt(0);
+
+                        Door newDoor = newRoom.Doors[doorIndex];
+                        Vector3 targetDoorDir = targetWorldDoorDir;
+                        computedRoomRotation = GetRoomRotation(targetDoorDir, newDoor); //computes the rotation of the room so that the door we've selected to try lines up properly to the door we are wanting to connect to
+                        Vector3 sDLocalWithRotation = GetVoxelWorldPos(newDoor.position, computedRoomRotation);
+                        computedRoomOffset = targetWorldVoxPos - sDLocalWithRotation; //the computed offset we need to apply to the room gameobject so that the doors align
+
+
+                        List<Vector3> worldVoxels = new List<Vector3>(); //check for overlaps with all of these. MUST BE Mathf.RoundToInt so that the vectors are not like 0.999999999 due to precision issues
+                        for(int i = 0; i < newRoom.LocalVoxels.Count; i++) {
+                            Vector3 v = GetVoxelWorldPos(newRoom.LocalVoxels[i].position, computedRoomRotation) + computedRoomOffset; //all the room voxels
                             worldVoxels.Add(v);
                         }
-                    }
 
-                    //all room voxels addd. Get all open door voxels now.. as we don't want to block the exits to any doors not yet connected on both sides.
-                    List<Vector3> doorNeighbours = new List<Vector3>();
-                    for(int i = 0; i < openSet.Count; i++) {
-                        Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
-                        doorNeighbours.Add(v);
-                    }
+                        for(int i = 0; i < newRoom.Doors.Count; i++) {
+                            if(i != doorIndex) { //all the door voxels (except the one we're currently working on/linking up to another room).
+                                                 //We need to do this to so that we don't PLACE this room in a spot where the doors of this room have no space for at least a 1x1x1 room (eg, opening a door directly into a wall)
+                                Vector3 v = GetVoxelWorldPos((newRoom.Doors[i].position + newRoom.Doors[i].direction), computedRoomRotation) + computedRoomOffset;
+                                worldVoxels.Add(v);
+                            }
+                        }
 
-                    anyOverlaps = false;
-                    for(int i = 0; i < worldVoxels.Count; i++) {
-                        Vector3 iV = new Vector3(Mathf.RoundToInt(worldVoxels[i].x), Mathf.RoundToInt(worldVoxels[i].y), Mathf.RoundToInt(worldVoxels[i].z));
-                        bool result = IsVoxelOccupied(iV); //check this rooms volume (including the voxels this rooms doors lead into) against all occupied voxels to check for overlaps
-                        if(result) {
-                            anyOverlaps = true;
-                            break;
-                        } else {
-                            for(int j = 0; j < doorNeighbours.Count; j++) { //also check this rooms volume against all the voxels openSet.doors lead into, prevents opening a door into a wall
-                                Vector3 iD = new Vector3(Mathf.RoundToInt(doorNeighbours[j].x), Mathf.RoundToInt(doorNeighbours[j].y), Mathf.RoundToInt(doorNeighbours[j].z));
-                                if(iD == iV) {
-                                    anyOverlaps = true;
-                                    break;
+                        //all room voxels addd. Get all open door voxels now.. as we don't want to block the exits to any doors not yet connected on both sides.
+                        List<Vector3> doorNeighbours = new List<Vector3>();
+                        for(int i = 0; i < openSet.Count; i++) {
+                            Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
+                            doorNeighbours.Add(v);
+                        }
+
+                        anyOverlaps = false;
+                        for(int i = 0; i < worldVoxels.Count; i++) {
+                            Vector3 iV = new Vector3(Mathf.RoundToInt(worldVoxels[i].x), Mathf.RoundToInt(worldVoxels[i].y), Mathf.RoundToInt(worldVoxels[i].z));
+                            bool result = IsVoxelOccupied(iV); //check this rooms volume (including the voxels this rooms doors lead into) against all occupied voxels to check for overlaps
+                            if(result) {
+                                anyOverlaps = true;
+                                break;
+                            } else {
+                                for(int j = 0; j < doorNeighbours.Count; j++) { //also check this rooms volume against all the voxels openSet.doors lead into, prevents opening a door into a wall
+                                    Vector3 iD = new Vector3(Mathf.RoundToInt(doorNeighbours[j].x), Mathf.RoundToInt(doorNeighbours[j].y), Mathf.RoundToInt(doorNeighbours[j].z));
+                                    if(iD == iV) {
+                                        anyOverlaps = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
+
+
+                    } while(doorsToTry.Count > 0 && anyOverlaps);
+
+                } while(roomsToTry.Count > 0 && anyOverlaps);
+
+                if(anyOverlaps) { //if we made it here, we either have a newRoom assigned and ready to spawn, or we have no rooms left to as they all didn't fit
+                    makeRoomDeadend = true;
+                }
+
+                //Instantiate
+                if(!makeRoomDeadend) {
+                    instantiatedNewRoom = AddRoom(newRoom, computedRoomOffset, computedRoomRotation);
+                    for(int i = 0; i < instantiatedNewRoom.Doors.Count; i++) {
+                        if(i != doorIndex) {
+                            openSet.Add(instantiatedNewRoom.Doors[i]);
+                        }
                     }
-
-
-                } while(doorsToTry.Count > 0 && anyOverlaps);
-
-            } while(roomsToTry.Count > 0 && anyOverlaps);
-
-            //Instantiate
-            RoomData instantiatedNewRoom = AddRoom(newRoom, computedRoomOffset, computedRoomRotation);
-            for(int i = 0; i < instantiatedNewRoom.Doors.Count; i++) {
-                if(i != doorIndex) {
-                    openSet.Add(instantiatedNewRoom.Doors[i]);
                 }
             }
 
 
-
             //spawn in door geometry
-            int di = rand.Next(0, generatorSettings.doors.Count); //get a random door from the list
-            GameObject doorToSpawn = generatorSettings.doors[di];
+            int di = 0;
+            GameObject doorToSpawn = null;
+            if(!makeRoomDeadend) {
+                di = rand.Next(0, generatorSettings.doors.Count); //get a random door from the list
+                doorToSpawn = generatorSettings.doors[di];
+            } else {
+                di = rand.Next(0, generatorSettings.deadendDoors.Count); //get a random door from the list
+                doorToSpawn = generatorSettings.deadendDoors[di];
+            }
             Vector3 doorOffset = new Vector3(0f, 0.5f, 0f); //to offset it so the gameobject pivot is on the bottom edge of the voxel
             GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f) - doorOffset , Quaternion.LookRotation(doorForProcessing.direction), this.transform);
-            doorForProcessing.spawnedDoor = spawnedDoor; 
+            doorForProcessing.spawnedDoor = spawnedDoor;
 
             //need to link up the doors to the roomData's too?
             //AllDoors.Add(spawnedDoor);
@@ -377,26 +413,49 @@ namespace DMDungeonGenerator {
             //we also know instantiedNewRoom is brand new and has no other connections, we we can use that directly,
             //however we need to search for doorForProcessing.parent in the roomsList first as it could have more connections already, if it does, we need to add the connection
             //betwen it and
+            if(!makeRoomDeadend) {
+                GraphNode newNode = new GraphNode();
+                newNode.data = instantiatedNewRoom; //connect it both ways, so we access the data from the node, and the node from the data...
+                instantiatedNewRoom.node = newNode;
+                //grab the node of the room we are connecting to
+                GraphNode lastNode = doorForProcessing.parent.node;
+                newNode.depth = lastNode.depth + 1;
+                if(newNode.depth > highestDepth) highestDepth = newNode.depth; //store the highest depth, used for debugging
 
-            GraphNode newNode = new GraphNode();
-            newNode.data = instantiatedNewRoom; //connect it both ways, so we access the data from the node, and the node from the data...
-            instantiatedNewRoom.node = newNode; 
-            //grab the node of the room we are connecting to
-            GraphNode lastNode = doorForProcessing.parent.node;
-            newNode.depth = lastNode.depth + 1;
-            if(newNode.depth > highestDepth) highestDepth = newNode.depth; //store the highest depth, used for debugging
+                //make a connection for the two of them
+                GraphConnection con = new GraphConnection();
+                con.a = lastNode; //store the connections to the rooms
+                con.b = newNode;
+                con.open = true;
+                con.doorRef = doorForProcessing; //this needs a reference to the door geometry, as we need to be able to...unlock it visually? We could hook it up to a data ref, which then has a ref to geometry too but that seems painfully overcomplicated
 
-            //make a connection for the two of them
-            GraphConnection con = new GraphConnection();
-            con.a = lastNode; //store the connections to the rooms
-            con.b = newNode; 
-            con.open = true;
-            con.doorRef = doorForProcessing; //this needs a reference to the door geometry, as we need to be able to...unlock it visually? We could hook it up to a data ref, which then has a ref to geometry too but that seems painfully overcomplicated
+                lastNode.connections.Add(con); //store the connections both ways
+                newNode.connections.Add(con);
+                spawnedDoor.GetComponent<GeneratorDoor>().data = con;
+                DungeonGraph.Add(newNode);
+            } else {
+                //want to add just a new door as we did not spawn a room!
 
-            lastNode.connections.Add(con); //store the connections both ways
-            newNode.connections.Add(con);
-            spawnedDoor.GetComponent<GeneratorDoor>().data = con;
-            DungeonGraph.Add(newNode);
+                //GraphNode newNode = new GraphNode();
+                //newNode.data = instantiatedNewRoom; //connect it both ways, so we access the data from the node, and the node from the data...
+                //instantiatedNewRoom.node = newNode;
+                //grab the node of the room we are connecting to
+                GraphNode lastNode = doorForProcessing.parent.node;
+                //newNode.depth = lastNode.depth + 1;
+                //if(newNode.depth > highestDepth) highestDepth = newNode.depth; //store the highest depth, used for debugging
+
+                //make a connection for the two of them
+                GraphConnection con = new GraphConnection();
+                con.a = lastNode; //store the connections to the rooms
+                con.b = null;
+                con.open = false;
+                con.doorRef = doorForProcessing; //this needs a reference to the door geometry, as we need to be able to...unlock it visually? We could hook it up to a data ref, which then has a ref to geometry too but that seems painfully overcomplicated
+
+                lastNode.connections.Add(con); //store the connections both ways
+                //newNode.connections.Add(con);
+                spawnedDoor.GetComponent<GeneratorDoor>().data = con;
+                //DungeonGraph.Add(newNode);
+            }
         }
 
         //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)

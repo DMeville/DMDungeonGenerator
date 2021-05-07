@@ -93,9 +93,13 @@ public class CallbackExample : MonoBehaviour
             GraphNode keyRoom; //By default, we place the key for the door, in the room that has the locked door.  
             //A GraphConnection stores the connection between two nodes (rooms), so in order to place it on the CORRECT side of the door (so it is accessable) we 
             //find which of the two rooms in the connection has the lowest depth.  If we put it in the room with the higher depth, the key would be on the other side...and you'd need the key to open the door to then get to the key!
-            if(randomDoor.a.depth < randomDoor.b.depth) keyRoom = randomDoor.a;
-            else keyRoom = randomDoor.b;
-            
+            if(randomDoor.a != null && randomDoor.b != null) { //if both nodes in the connection are not null...
+                if(randomDoor.a.depth < randomDoor.b.depth) keyRoom = randomDoor.a;
+                else keyRoom = randomDoor.b;
+            } else { //one node is null, so just assign the keyroom to whichever is not
+                if(randomDoor.a == null) keyRoom = randomDoor.b;
+                else keyRoom = randomDoor.a;
+            }
             //we now can "walk" the key along the dungeon graph, a random number of steps.  This moves the key room to a different (nearby, usually) room so keys are a bit harder to find. 
             //a few rules about this.  A key can go to any room via the key room's connections
             //1) It CAN go through locked doors only if it's going through that locked door in the "right" way, eg, key Room with depth 1 -> Locked door -> room with depth 0.  Locked doors are like one-way platforms, we can walk throgh if we're walking to a room with lower depth.
@@ -108,18 +112,21 @@ public class CallbackExample : MonoBehaviour
                 List<GraphConnection> possibleRooms = new List<GraphConnection>();
                 for(int c = 0; c < keyRoom.connections.Count; c++) {
                     GraphConnection gc = keyRoom.connections[c];
-                    if(gc.open) { //if the door to this possible room is open, add it to the list of places we can end up this step
-                        possibleRooms.Add(gc); 
-                    } else { 
-                        //If the door to this possible room is locked, we might still be able to move through it so long as we are moving towards a lower depth
-                        GraphNode other; //the connection holds a ref to the two rooms it connects, since it is in our current room's connection list, we know one of the rooms is us, but we don't know whih one...
-                        //so figure that out so we can grab the other room
-                        if(gc.a == keyRoom) other = gc.b;
-                        else other = gc.a;
-                        
-                        //then if the other rom has a lower depth, we can move through it's locked door so add that to the list of places we can end up
-                        if(other.depth < keyRoom.depth) {
+                    if(gc.a == null || gc.b == null) { //if both nodes in the connection are not null...just do nothing
+                    } else { //otherwise...
+                        if(gc.open) { //if the door to this possible room is open, add it to the list of places we can end up this step
                             possibleRooms.Add(gc);
+                        } else {
+                            //If the door to this possible room is locked, we might still be able to move through it so long as we are moving towards a lower depth
+                            GraphNode other; //the connection holds a ref to the two rooms it connects, since it is in our current room's connection list, we know one of the rooms is us, but we don't know whih one...
+                                             //so figure that out so we can grab the other room
+                            if(gc.a == keyRoom) other = gc.b;
+                            else other = gc.a;
+
+                            //then if the other rom has a lower depth, we can move through it's locked door so add that to the list of places we can end 
+                            if(other.depth < keyRoom.depth) {
+                                possibleRooms.Add(gc);
+                            }
                         }
                     }
                 }
