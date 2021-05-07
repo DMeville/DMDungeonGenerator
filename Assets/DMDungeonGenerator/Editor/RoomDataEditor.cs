@@ -12,12 +12,14 @@ public class RoomDataEditor: Editor {
 
     public static EditingMode mode = EditingMode.None;
     private bool invert = false;
+    private bool doEntireRow = false;
     
-    public float transparency = 0.2f;
     public override void OnInspectorGUI() {
+        RoomData data = (RoomData)target;
+
         mode = (EditingMode)EditorGUILayout.EnumPopup("EditingMode: ", mode);
         EditorGUILayout.LabelField("Transparency: ");
-        transparency = EditorGUILayout.Slider(transparency, 0f, 0.25f);
+        data.debugTransparency= EditorGUILayout.Slider(data.debugTransparency, 0f, 0.25f);
         base.OnInspectorGUI();
     }
 
@@ -30,7 +32,7 @@ public class RoomDataEditor: Editor {
         float voxelScale = DMDungeonGenerator.DungeonGenerator.voxelScale;
 
         for(int i = 0; i < vox.Count; i++) {
-            Handles.color = new Color(1f, 1f, 1f, transparency);
+            Handles.color = new Color(1f, 1f, 1f, data.debugTransparency);
             Vector3 pos = vox[i].position;
             Handles.CubeHandleCap(-1, data.transform.TransformPoint((pos*voxelScale)), data.transform.rotation, voxelScale, EventType.Repaint);
         }
@@ -56,6 +58,7 @@ public class RoomDataEditor: Editor {
                     float handleSize = 0.4f;
 
                     invert = Event.current.shift;
+                    doEntireRow = Event.current.control;
                     float iS = 1f ; //inverted sign for direction
                     float iO = 0f; //inverted offset for arrows
                     if(invert) {
@@ -64,15 +67,18 @@ public class RoomDataEditor: Editor {
                     }
 
                     Handles.color = Color.blue;
+                    if(doEntireRow) Handles.color = Color.Lerp(Color.blue, Color.white, 0.5f);
                     DrawArrowButton(pos, Vector3.forward, handleSize, iO, iS);
                     DrawArrowButton(pos, Vector3.back, handleSize, iO, iS);
 
 
                     Handles.color = Color.green;
+                    if(doEntireRow) Handles.color = Color.Lerp(Color.green, Color.white, 0.5f);
                     DrawArrowButton(pos, Vector3.up, handleSize, iO, iS);
                     DrawArrowButton(pos, Vector3.down, handleSize, iO, iS);
 
                     Handles.color = Color.red;
+                    if(doEntireRow) Handles.color = Color.Lerp(Color.red, Color.white, 0.5f);
                     DrawArrowButton(pos, Vector3.left, handleSize, iO, iS);
                     DrawArrowButton(pos, Vector3.right, handleSize, iO, iS);
                 
@@ -127,10 +133,42 @@ public class RoomDataEditor: Editor {
 
     private void ClickedArrowHandle(Vector3 pos, Vector3 dir) {
         if(invert) {
-            ((RoomData)target).RemoveVoxel(pos);
-
+            if(doEntireRow) {
+                List<Vector3> posAllToMove = new List<Vector3>();
+                int localCount = ((RoomData)target).LocalVoxels.Count;
+                for(int i = 0; i < localCount; i++) {
+                    Vector3 fp = Vector3.Scale(((RoomData)target).LocalVoxels[i].position, dir); //this "filters" the position, essentially zeroing out any axis we don't care about comparing against
+                    if(fp == Vector3.Scale(pos, dir)) {
+                        posAllToMove.Add(((RoomData)target).LocalVoxels[i].position);
+                    }
+                }
+                for(int i = 0; i < posAllToMove.Count; i++) {
+                    if(!IsVoxelEmpty(posAllToMove[i])) {
+                        ((RoomData)target).RemoveVoxel(posAllToMove[i]);
+                    }
+                }
+            } else {
+                ((RoomData)target).RemoveVoxel(pos);
+            }
         } else {
-            ((RoomData)target).AddVoxel(pos, dir);
+            if(doEntireRow) {
+                List<Vector3> posAllToMove = new List<Vector3>();
+                int localCount = ((RoomData)target).LocalVoxels.Count;
+                for(int i = 0; i < localCount; i++) {
+                    Vector3 fp = Vector3.Scale(((RoomData)target).LocalVoxels[i].position, dir); //this "filters" the position, essentially zeroing out any axis we don't care about comparing against
+                    if(fp == Vector3.Scale(pos, dir)) {
+                        posAllToMove.Add(((RoomData)target).LocalVoxels[i].position);
+                    }
+                }
+                for(int i = 0; i < posAllToMove.Count; i++) {
+                    if(IsVoxelEmpty(posAllToMove[i] + dir)) {
+                        ((RoomData)target).AddVoxel(posAllToMove[i], dir);
+                    }
+                }
+
+            } else {
+                ((RoomData)target).AddVoxel(pos, dir);
+            }
         }
         EditorUtility.SetDirty(target);
     }

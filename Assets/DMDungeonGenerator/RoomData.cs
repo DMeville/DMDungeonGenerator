@@ -6,6 +6,8 @@ using System;
 namespace DMDungeonGenerator {
     [ExecuteInEditMode]
     public class RoomData:MonoBehaviour {
+        [HideInInspector]
+        public float debugTransparency = 0.2f;
 
         public List<DMDungeonGenerator.Voxel> LocalVoxels = new List<Voxel>();
         public List<DMDungeonGenerator.Door> Doors = new List<DMDungeonGenerator.Door>();
@@ -36,6 +38,7 @@ namespace DMDungeonGenerator {
         /// <param name="pos"></param>
         /// <param name="dir"></param>
         public void AddVoxel(Vector3 pos, Vector3 dir) {
+            //should do a check to make sure this voxel is not already in the list..
             LocalVoxels.Add(new Voxel(pos + dir));
             RecalculateBounds();
             //check all doors to make sure the
