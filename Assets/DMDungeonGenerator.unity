@@ -438,7 +438,7 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   drawGlobalVoxels: 1
   drawAllDoors: 0
-  drawGraph: 0
+  drawGraph: 1
   drawDepthLabels: 0
   colourRoomsWithDepth: 0
   colourLockedDoors: 0

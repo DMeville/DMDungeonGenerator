@@ -449,6 +449,7 @@ namespace DMDungeonGenerator {
                 con.a = lastNode; //store the connections to the rooms
                 con.b = null;
                 con.open = false;
+                con.keyID = -1;
                 con.doorRef = doorForProcessing; //this needs a reference to the door geometry, as we need to be able to...unlock it visually? We could hook it up to a data ref, which then has a ref to geometry too but that seems painfully overcomplicated
 
                 lastNode.connections.Add(con); //store the connections both ways
@@ -818,23 +819,26 @@ namespace DMDungeonGenerator {
                                 GUIStyle style = new GUIStyle();
                                 style.fontSize = 25;
                                 style.normal.textColor = Color.black;
-                                UnityEditor.Handles.Label(dPos + new Vector3(0f, 0.4f, 0f), "Lock: " + c.keyID.ToString(), style);
+                                if(c.keyID != -1) {
+                                    UnityEditor.Handles.Label(dPos + new Vector3(0f, 0.4f, 0f), "Lock: " + c.keyID.ToString(), style);
+                                }
                             }
                         }
 
+                        if(c.b != null) {
+                            Vector3 posStart = c.a.data.transform.position;
+                            Vector3 posEnd = c.b.data.transform.position;
 
-                        Vector3 posStart = c.a.data.transform.position;
-                        Vector3 posEnd = c.b.data.transform.position;
-
-                        float l = ((float)DungeonGraph[i].depth) / highestDepth;
-                        Color col = debugGradient.Evaluate(l);
-                        col = graphConnectionColor;
-                        Gizmos.color = col;
-                        for(int thicc = 0; thicc < 5; thicc++) {
-                            float thic = 0.01f * thicc;
-                            Vector3 lineThicc = new Vector3(thic, thic, thic);
-                            Gizmos.DrawLine(posStart + offset + lineThicc, dPos + lineThicc);
-                            Gizmos.DrawLine(posEnd + offset + lineThicc, dPos + lineThicc);
+                            float l = ((float)DungeonGraph[i].depth) / highestDepth;
+                            Color col = debugGradient.Evaluate(l);
+                            col = graphConnectionColor;
+                            Gizmos.color = col;
+                            for(int thicc = 0; thicc < 5; thicc++) {
+                                float thic = 0.01f * thicc;
+                                Vector3 lineThicc = new Vector3(thic, thic, thic);
+                                Gizmos.DrawLine(posStart + offset + lineThicc, dPos + lineThicc);
+                                Gizmos.DrawLine(posEnd + offset + lineThicc, dPos + lineThicc);
+                            }
                         }
 
                     }

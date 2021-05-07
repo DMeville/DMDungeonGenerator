@@ -11,6 +11,8 @@ namespace DMDungeonGenerator {
 
         public int TargetRooms = 100;
         public int minRooms = 25; //if the generator finishes with fewer than this many rooms, it tries again.  This prevents dungeons being very very small due to super bad rng
+        
+        [Tooltip("Enable this if you want the dungeon to spawn 1x1x1 voxel rooms as deadends (from the deadendRooms list) when the generator is finishing and capping off rooms.  Otherwise, if this is not enabled, it will just spawn 'fake walls' as doors (from the deadenddoors List) to cap off open connections")]
         public bool useDeadendRooms = true; //if true, the generator will spawn a single voxel room to "cap off" the generation when it's complete.  
                                             //If false, it will spawn a door instead on the "open connection" of the last room that can not be passed.
 
