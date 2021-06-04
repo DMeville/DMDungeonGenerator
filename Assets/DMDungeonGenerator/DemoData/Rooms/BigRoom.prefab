@@ -297,6 +297,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdb53d5371f46fb4dab2452c520cdd3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTransparency: 0
   LocalVoxels:
   - position: {x: 0, y: 0, z: 0}
   - position: {x: 0, y: 0, z: -1}

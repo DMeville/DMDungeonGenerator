@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdb53d5371f46fb4dab2452c520cdd3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTransparency: 0.2
   LocalVoxels:
   - position: {x: 0, y: 0, z: 0}
   - position: {x: 0, y: 0, z: -1}
@@ -69,6 +70,7 @@ MonoBehaviour:
     data: {fileID: 0}
     connections: []
   rotation: 0
+  roomTemplateID: 0
 --- !u!114 &5371146885206478036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81,6 +83,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61896ee2abd96044ea7e2a265ea45049, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawnLocations: []
+  spawnables: []
+  spawnedRandomProps: []
 --- !u!1 &5337278561559346035
 GameObject:
   m_ObjectHideFlags: 0

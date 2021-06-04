@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -6,9 +6,10 @@ using System;
 using DMUtils;
 
 namespace DMDungeonGenerator {
-    public class DungeonGenerator:MonoBehaviour { 
+    public class DungeonGenerator:MonoBehaviour {
 
         [Header("Generator Options")]
+        public bool generateOnStart = true;
         public bool randomSeedOnStart = false;
 
         /// <summary>
@@ -90,7 +91,9 @@ namespace DMDungeonGenerator {
             if(randomSeedOnStart) randomSeed = UnityEngine.Random.Range(0, 9999);
             targetRooms = generatorSettings.TargetRooms;
 
-            StartGenerator(randomSeed);
+            if(generateOnStart) {
+                StartGenerator(randomSeed);
+            }
         }
 
         public void StartGenerator(int seed) {
@@ -193,6 +196,8 @@ namespace DMDungeonGenerator {
             for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) {
                 generatorSettings.possibleRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
                 templateId++;
+                generatorSettings.possibleRooms[i].GetComponent<RoomData>().PrecomputeDeltas();
+
             }
             for(int i = 0; i < generatorSettings.spawnRooms.Count; i++) {
                 generatorSettings.spawnRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
@@ -240,14 +245,195 @@ namespace DMDungeonGenerator {
 
         }
 
+        int ttt = 0;
+        int skips = 1;
         public void GenerateNextRoom() {
             Door targetDoor = openSet[0]; //grab the first door in the openset to process
             openSet.RemoveAt(0);
+            Door loopTargetDoor = null; ; //for our second door if closing loops
+ 
 
             Vector3 targetVoxel = targetDoor.position + targetDoor.direction; //offset one voxel in door dir so we work on the unoccupied voxel the door leads to
             Vector3 targetWorldVoxPos = GetVoxelWorldPos(targetVoxel, targetDoor.parent.rotation) + targetDoor.parent.transform.position; //need this for offset
             Vector3 targetWorldDoorDir = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation); //the target voxel we're going to align to
 
+        
+
+            ttt++;
+            //looping room stuff
+            //get all the other doors and create a doorpair with the current door we are processing.
+            List<DoorPairData> dpd = new List<DoorPairData>();
+            for(int i = 0; i < openSet.Count; i++) {
+                Door a = targetDoor;
+                Door b = openSet[i];
+                if(a.parent == b.parent) continue;
+                Vector3 doorAWorldVoxPos = GetVoxelWorldPos(a.position + a.direction, a.parent.rotation) + a.parent.transform.position;
+                Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position;
+                Vector3 dist = new Vector3(Mathf.Abs(doorAWorldVoxPos.x - doorBWorldVoxPos.x), Mathf.Abs(doorAWorldVoxPos.y - doorBWorldVoxPos.y), Mathf.Abs(doorAWorldVoxPos.z - doorBWorldVoxPos.z));
+                float vD = dist.x + dist.y + dist.z - 1f;
+                //need to find a matching doorpair that fits these critera in order to spawn it in and close it up...
+
+                if(Mathf.RoundToInt(vD) <= 9) { //if the doors are close enough we might be able to connect to (as most rooms I think would be relatively small idk this number is straight outta thin air
+                    DoorPairData dd = new DoorPairData();
+                    dd.door = b;
+                    dd.openSetIndex = i;
+                    dd.deltaPos = doorBWorldVoxPos - doorAWorldVoxPos;
+                    dpd.Add(dd);
+                    //Debug.Log("New door pair!");
+                    //Debug.Log("Voxel distance between doors is: " + vD);
+                    //Debug.Log("LDelta: " + dd.deltaPos.ToString());
+                    //Debug.Log("WDelta: " + (doorBWorldVoxPos - doorAWorldVoxPos).ToString());
+                    //Debug.Log("Distance: " + dd.VoxelDistance());
+                    //Debug.Log("Door directions: " + GetVoxelWorldDir(a.direction, a.parent.rotation).ToString() + " : " + GetVoxelWorldDir(b.direction, b.parent.rotation).ToString());
+                    //Debug.DrawLine(doorAWorldVoxPos, doorBWorldVoxPos, Color.red);
+                    Debug.DrawRay(doorAWorldVoxPos, GetVoxelWorldDir(a.direction, a.parent.rotation) * 0.5f, Color.green);
+                    Debug.DrawRay(doorBWorldVoxPos, GetVoxelWorldDir(b.direction, b.parent.rotation) * 0.5f, Color.green);
+                    //can we draw the voxel delta as...voxels
+                    break;
+                }
+            }
+
+            List<(GameObject, int, int, int, int)> loopRooms = new List<(GameObject, int, int, int ,int)>();
+            if(true) {
+                //Debug.Log("--------------------------- Door Pairs: " + dpd.Count);
+                //each dpd is a pair with currentDoor and some other door, that is close ish
+                //so we really should loop through each pair (although we usually only have like one valid pair to close... if any)
+                for(int i = 0; i < dpd.Count; i++) {
+                    Door a = dpd[i].door;
+                    Door b = targetDoor;
+                    Vector3 doorAWorldVoxPos = GetVoxelWorldPos(a.position + a.direction, a.parent.rotation) + a.parent.transform.position + (Vector3.up * 0.1f);
+                    Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position + (Vector3.up * 0.1f);
+                    Debug.DrawLine(doorAWorldVoxPos, doorBWorldVoxPos, DMDungeonGenerator.DungeonGenerator.GetKeyColor(i));
+                }
+
+
+                if(dpd.Count > 0) { 
+                    DoorPairData spawnedPairData = dpd[0];
+                    Door b = spawnedPairData.door;
+                    Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position;
+                    Debug.DrawRay(doorBWorldVoxPos, Vector3.up, Color.black);
+                    Debug.DrawRay(targetWorldVoxPos, Vector3.up, Color.white);
+                    Debug.DrawLine(doorBWorldVoxPos, targetWorldVoxPos, Color.white);
+
+                    for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) {
+                        RoomData possibleRoom = generatorSettings.possibleRooms[i].gameObject.GetComponent<RoomData>();
+                        if(possibleRoom.Doors.Count < 2) continue;
+                        //Debug.Log("Checking possible room: " + possibleRoom.gameObject.name);
+
+                        //we need to check every door pair in this possible room, to see if the computed STUFF matches the spawened door pair we already have.
+                        for(int j = 0; j < possibleRoom.Doors.Count; j++) {
+                            Door possibleDoor = possibleRoom.Doors[j];
+                            for(int k = 0; k < possibleDoor.doorPairs.Count; k++) {
+                                DoorPairData possiblePairData = possibleDoor.doorPairs[k];
+
+                                int pairIndex = -1;
+                                for(int dpi = 0; dpi < possibleRoom.Doors.Count; dpi++) {
+                                    if(possiblePairData.door == possibleRoom.Doors[dpi]) {
+                                        pairIndex = dpi;
+                                    }
+                                }
+
+                                //Debug.Log("------------------------------------ Checking pair with doors: " + j + " : " + pairIndex);
+
+
+                                if(possiblePairData.VoxelDistance() == spawnedPairData.VoxelDistance()) {
+                                    //Debug.Log("Matching voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance());
+                                    //check what rotation we'd need to match this...
+                                    if(possiblePairData.CompareDeltas(spawnedPairData.deltaPos)) {
+                                        //Debug.Log("Matching Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
+                                        int neededRotation = possiblePairData.GetMatchingDeltaRotation(spawnedPairData.deltaPos);
+                                        //Debug.Log("Needs rotation of: " + neededRotation);
+
+                                        //check if doors line up with either of these rotations?
+                                        Vector3 sDoorA = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation);
+                                        Vector3 sDoorB = GetVoxelWorldDir(spawnedPairData.door.direction, spawnedPairData.door.parent.rotation);
+
+                                        Vector3 pDoorA = GetVoxelWorldDir(possibleDoor.direction, neededRotation);
+                                        Vector3 pDoorB = GetVoxelWorldDir(possiblePairData.door.direction, neededRotation);
+
+                                        //Debug.Log("SDoor directions: " + sDoorA.ToString() + " : " + sDoorB.ToString());
+                                       // Debug.Log("pDoor directions: " + pDoorA.ToString() + " : " + pDoorB.ToString());
+
+                                        //do these doors face eachother? (in any order?)
+                                        //it says we are facing eachother...but the data doesn't seem right??
+                                        bool facingEachother = false;
+                                        if(sDoorA == -pDoorA && sDoorB == -pDoorB) { 
+                                            facingEachother = true;
+                                            //Debug.Log("FacingA");
+                                        } else if(sDoorA == -pDoorB && sDoorB == -pDoorA) {
+                                            facingEachother = true;
+                                            //Debug.Log("FacingB");
+                                        }
+                                        if(facingEachother) {
+                                            //Debug.Log("--------- NEW LOOP ROOM PASSED: Doors facing eachother check passed: " + possibleRoom.gameObject.name + " :r " + neededRotation);
+                                            int doorIndexToConnect = 0;
+                                            //what door index from loop room are we using as the position/alignment target?
+                                            //we know we are processing targetDoor, so we need to know which door in possibleRoom we should sync up to
+                                            //then we also need to close/connect up the other two doors in the other two doorpairs
+                                            //we know the targetDoors worldPosition and world direction.  
+
+                                            //we can just test it?
+                                            //Align doors A->A with rotation, and see if B->B also then land on the matching voxels?
+                                            //if not Align doors A->B and see if B->A land on the matching voxels?
+                                            //then we can return door index too to the loopRooms list?
+
+                                            //we can also check the deltaPos, if they match exactly it should mean they are ordered, if they are flipped, it means we need to reorder the doorpairs?
+
+                                            //spawnedPairData.deltaPos; //compare against
+                                            int otherIndex = -1;
+                                            int indexA = -1;
+                                            int indexB = -1;
+                                            Vector3 delta = possiblePairData.GetRotatedDelta(neededRotation);
+                                            bool matchingDeltas = (delta == spawnedPairData.deltaPos);
+                                            bool inverted = false;
+                                            if(!matchingDeltas) {
+                                                if(delta == -spawnedPairData.deltaPos) {
+                                                    matchingDeltas = true;
+                                                    inverted = true;
+                                                }
+                                            }
+
+                                            //Debug.Log("Do the deltas match?: " + matchingDeltas + ": inverted? " + inverted);
+                                            if(matchingDeltas) {
+                                                for(int dd = 0; dd < possibleRoom.Doors.Count; dd++) {
+                                                    if(possibleRoom.Doors[dd] == possiblePairData.door) {
+                                                        otherIndex = dd;
+                                                    }
+                                                }
+
+                                                if(!inverted) {
+                                                    indexA = j;
+                                                    indexB = otherIndex;
+                                                } else {
+                                                    indexA = otherIndex;
+                                                    indexB = j;
+                                                }
+
+                                                //Debug.Log("Connecting doors: targetDoor -> possibleRoom.Doors[" + indexA + "] and spawnedPair -> possibleRoom.Doors[" + indexB + "]");
+                                                
+                                            }
+                                            loopRooms.Add((possibleRoom.gameObject, neededRotation, spawnedPairData.openSetIndex, indexA, indexB));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if(loopRooms.Count > 0) Debug.Log("We have loopRooms: " + loopRooms.Count);
+                for(int i = 0; i < loopRooms.Count; i++) {
+                    Debug.Log("Loop piece: " + loopRooms[i].Item1.gameObject.name + " with a needed rotation of: " + loopRooms[i].Item2);
+                    Debug.Log("Spawned room doors are targetDoor and openSet[" + loopRooms[i].Item3 + "] and other possRoomDoors at index: " + loopRooms[i].Item4 + " and " + loopRooms[i].Item5);
+                }
+                if(loopRooms.Count > 0) {
+                    skips--;
+                }
+
+
+            }
+
+            //--------------
             Door doorForProcessing = new Door(targetWorldVoxPos, targetWorldDoorDir, targetDoor.parent); //why do I do this instead of using targetDoor directly...?
             //AllDoorsData.Add(doorForProcessing);
 
@@ -290,43 +476,43 @@ namespace DMDungeonGenerator {
             if(roomsToTry.Count == 0) makeRoomDeadend = true;
 
 
+            bool loopFits = false;
             if(!makeRoomDeadend) //spawn rooms like normal
             { 
                 //data we will have once we find a room, used for spawning the room into the world
                 RoomData newRoom = null;
                 Vector3 computedRoomOffset = Vector3.zero;
                 int doorIndex = 0;
+                int loopDoorIndex = -1;
+                int secondSpawnedDoorIndex = -1;
                 float computedRoomRotation = 0f;
                 bool anyOverlaps = false;
 
-                //start
-                do {
-                    //it's possible that we try every room and none fit, especially if we don't have any deaded rooms that _should_ fit in any situation.
-                    //so if the list is empty, just break out
-                    if(roomsToTry.Count == 0) {
-                        makeRoomDeadend = true;
-                        break;
-                    }
+                { //pre generation step.. If we pass this we don't have to actually do the next do{} loop
+                    //before we do anything, we should check our loopRoomList to see if we have any pieces we know we want to spawn ahead of time. Like for closing any loops we've computed.
+                    //This loop room MIGHT now pass the voxel collisions checks though... so that's why we need to check all them
+                    if(loopRooms.Count > 0) Debug.Log($"We have [{loopRooms.Count}] rooms");
+                    for(int lr = 0; lr < loopRooms.Count; lr++) {
+                        GameObject roomPrefab = loopRooms[lr].Item1;
+                        int rotationNeeded = loopRooms[lr].Item2;
+                        //Spawned Door A = targetDoor
+                        int spawnedDoorBIndex = loopRooms[lr].Item3;
+                        int possibleDoorAIndex = loopRooms[lr].Item4;
+                        int possibleDoorBIndex = loopRooms[lr].Item5;
 
-                    newRoom = roomsToTry[0].GetComponent<RoomData>();
-                    roomsToTry.RemoveAt(0);
-
-                    List<int> doorsToTry = new List<int>();
-                    for(int i = 0; i < newRoom.Doors.Count; i++) {
-                        doorsToTry.Add(i);
-                    }
-                    doorsToTry.Shuffle(rand); //same thing here with the doorors as with the rooms. Copy the list so we can exaust our options, shuffle it so we never try in the same order
-
-                    do { //try all the different doors in different orientations
-                        doorIndex = doorsToTry[0]; //get first doorIndex (has been shuffled)
-                        doorsToTry.RemoveAt(0);
+                        //--
+                        newRoom = roomPrefab.GetComponent<RoomData>();
+                        doorIndex = possibleDoorAIndex;
+                        loopDoorIndex = possibleDoorBIndex;
+                        secondSpawnedDoorIndex = spawnedDoorBIndex;
 
                         Door newDoor = newRoom.Doors[doorIndex];
                         Vector3 targetDoorDir = targetWorldDoorDir;
-                        computedRoomRotation = GetRoomRotation(targetDoorDir, newDoor); //computes the rotation of the room so that the door we've selected to try lines up properly to the door we are wanting to connect to
+                        computedRoomRotation = rotationNeeded; //(we could compute this like we do in the main generator, but we also already know it..sooo?)
                         Vector3 sDLocalWithRotation = GetVoxelWorldPos(newDoor.position, computedRoomRotation);
-                        computedRoomOffset = targetWorldVoxPos - sDLocalWithRotation; //the computed offset we need to apply to the room gameobject so that the doors align
+                        computedRoomOffset = targetWorldVoxPos - sDLocalWithRotation;
 
+                        //AddRoom(newRoom, computedRoomOffset, computedRoomRotation); WORKS! need to make sure it passes the overlap tests first though...!
 
                         List<Vector3> worldVoxels = new List<Vector3>(); //check for overlaps with all of these. MUST BE Mathf.RoundToInt so that the vectors are not like 0.999999999 due to precision issues
                         for(int i = 0; i < newRoom.LocalVoxels.Count; i++) {
@@ -335,8 +521,8 @@ namespace DMDungeonGenerator {
                         }
 
                         for(int i = 0; i < newRoom.Doors.Count; i++) {
-                            if(i != doorIndex) { //all the door voxels (except the one we're currently working on/linking up to another room).
-                                                 //We need to do this to so that we don't PLACE this room in a spot where the doors of this room have no space for at least a 1x1x1 room (eg, opening a door directly into a wall)
+                            if(i == doorIndex || i == possibleDoorBIndex) { //only add the neighbours to the doors we DONT care about
+                            } else {
                                 Vector3 v = GetVoxelWorldPos((newRoom.Doors[i].position + newRoom.Doors[i].direction), computedRoomRotation) + computedRoomOffset;
                                 worldVoxels.Add(v);
                             }
@@ -345,8 +531,11 @@ namespace DMDungeonGenerator {
                         //all room voxels addd. Get all open door voxels now.. as we don't want to block the exits to any doors not yet connected on both sides.
                         List<Vector3> doorNeighbours = new List<Vector3>();
                         for(int i = 0; i < openSet.Count; i++) {
-                            Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
-                            doorNeighbours.Add(v);
+                            //we also need to ignore the second spawned door neighbour here.
+                            if(i != spawnedDoorBIndex) {
+                                Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
+                                doorNeighbours.Add(v);
+                            }
                         }
 
                         anyOverlaps = false;
@@ -366,11 +555,98 @@ namespace DMDungeonGenerator {
                                 }
                             }
                         }
+                        //overlap tests
+
+                        Debug.Log("Any overlaps?: " + anyOverlaps);
+                        if(!anyOverlaps) {
+                            //YEP WE FOUND A ROOM THAT LOOPS AND FITS YAY
+                            loopFits = true;
+                            //Debug.Log("<color=red>!!!!!!!!!!!!!!!FOUND A ROOM THAT LOOOOOOOOOOOOOOOOOOOOOOOOOPS</color>");
+                        }
+                        //Debug.Break();
+                        //return;
+                        //spawn roomPrefab
+                        //assign rotation
+                        //check collisions
+                        //link up doors, spawnA -> possA, spawnB->possB for the graph
+                        //spawn two door geos
+                    }
+                }
+
+                if(!loopFits) {
+                    //start
+                    do {
+                        //it's possible that we try every room and none fit, especially if we don't have any deaded rooms that _should_ fit in any situation.
+                        //so if the list is empty, just break out
+                        if(roomsToTry.Count == 0) {
+                            makeRoomDeadend = true;
+                            break;
+                        }
+
+                        newRoom = roomsToTry[0].GetComponent<RoomData>();
+                        roomsToTry.RemoveAt(0);
+
+                        List<int> doorsToTry = new List<int>();
+                        for(int i = 0; i < newRoom.Doors.Count; i++) {
+                            doorsToTry.Add(i);
+                        }
+                        doorsToTry.Shuffle(rand); //same thing here with the doorors as with the rooms. Copy the list so we can exaust our options, shuffle it so we never try in the same order
+
+                        do { //try all the different doors in different orientations
+                            doorIndex = doorsToTry[0]; //get first doorIndex (has been shuffled)
+                            doorsToTry.RemoveAt(0);
+
+                            Door newDoor = newRoom.Doors[doorIndex];
+                            Vector3 targetDoorDir = targetWorldDoorDir;
+                            computedRoomRotation = GetRoomRotation(targetDoorDir, newDoor); //computes the rotation of the room so that the door we've selected to try lines up properly to the door we are wanting to connect to
+                            Vector3 sDLocalWithRotation = GetVoxelWorldPos(newDoor.position, computedRoomRotation);
+                            computedRoomOffset = targetWorldVoxPos - sDLocalWithRotation; //the computed offset we need to apply to the room gameobject so that the doors align
 
 
-                    } while(doorsToTry.Count > 0 && anyOverlaps);
+                            List<Vector3> worldVoxels = new List<Vector3>(); //check for overlaps with all of these. MUST BE Mathf.RoundToInt so that the vectors are not like 0.999999999 due to precision issues
+                            for(int i = 0; i < newRoom.LocalVoxels.Count; i++) {
+                                Vector3 v = GetVoxelWorldPos(newRoom.LocalVoxels[i].position, computedRoomRotation) + computedRoomOffset; //all the room voxels
+                                worldVoxels.Add(v);
+                            }
 
-                } while(roomsToTry.Count > 0 && anyOverlaps);
+                            for(int i = 0; i < newRoom.Doors.Count; i++) {
+                                if(i != doorIndex) { //all the door voxels (except the one we're currently working on/linking up to another room).
+                                                     //We need to do this to so that we don't PLACE this room in a spot where the doors of this room have no space for at least a 1x1x1 room (eg, opening a door directly into a wall)
+                                    Vector3 v = GetVoxelWorldPos((newRoom.Doors[i].position + newRoom.Doors[i].direction), computedRoomRotation) + computedRoomOffset;
+                                    worldVoxels.Add(v);
+                                }
+                            }
+
+                            //all room voxels addd. Get all open door voxels now.. as we don't want to block the exits to any doors not yet connected on both sides.
+                            List<Vector3> doorNeighbours = new List<Vector3>();
+                            for(int i = 0; i < openSet.Count; i++) {
+                                Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
+                                doorNeighbours.Add(v);
+                            }
+
+                            anyOverlaps = false;
+                            for(int i = 0; i < worldVoxels.Count; i++) {
+                                Vector3 iV = new Vector3(Mathf.RoundToInt(worldVoxels[i].x), Mathf.RoundToInt(worldVoxels[i].y), Mathf.RoundToInt(worldVoxels[i].z));
+                                bool result = IsVoxelOccupied(iV); //check this rooms volume (including the voxels this rooms doors lead into) against all occupied voxels to check for overlaps
+                                if(result) {
+                                    anyOverlaps = true;
+                                    break;
+                                } else {
+                                    for(int j = 0; j < doorNeighbours.Count; j++) { //also check this rooms volume against all the voxels openSet.doors lead into, prevents opening a door into a wall
+                                        Vector3 iD = new Vector3(Mathf.RoundToInt(doorNeighbours[j].x), Mathf.RoundToInt(doorNeighbours[j].y), Mathf.RoundToInt(doorNeighbours[j].z));
+                                        if(iD == iV) {
+                                            anyOverlaps = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+
+                        } while(doorsToTry.Count > 0 && anyOverlaps);
+
+                    } while(roomsToTry.Count > 0 && anyOverlaps);
+                }
 
                 if(anyOverlaps) { //if we made it here, we either have a newRoom assigned and ready to spawn, or we have no rooms left to as they all didn't fit
                     makeRoomDeadend = true;
@@ -378,15 +654,28 @@ namespace DMDungeonGenerator {
 
                 //Instantiate
                 if(!makeRoomDeadend) {
-                    instantiatedNewRoom = AddRoom(newRoom, computedRoomOffset, computedRoomRotation);
-                    for(int i = 0; i < instantiatedNewRoom.Doors.Count; i++) {
-                        if(i != doorIndex) {
-                            openSet.Add(instantiatedNewRoom.Doors[i]);
+                    instantiatedNewRoom = AddRoom(newRoom, computedRoomOffset, computedRoomRotation, loopFits);
+
+                    if(!loopFits) {
+                        for(int i = 0; i < instantiatedNewRoom.Doors.Count; i++) {
+                            if(i != doorIndex) {
+                                openSet.Add(instantiatedNewRoom.Doors[i]);
+                            }
                         }
+                    } else {
+                        for(int i = 0; i < instantiatedNewRoom.Doors.Count; i++) {
+                            if(i == doorIndex || i == loopDoorIndex) {//only add the doors that are not one of the two loop doors we are about to close
+                            } else { 
+                                openSet.Add(instantiatedNewRoom.Doors[i]);
+                            }
+                        }
+                        //we also need to remove the second door from openset.
+                        loopTargetDoor = openSet[secondSpawnedDoorIndex];
+                        openSet.RemoveAt(secondSpawnedDoorIndex);
                     }
                 }
             }
-
+            
 
             //spawn in door geometry
             int di = 0;
@@ -406,7 +695,26 @@ namespace DMDungeonGenerator {
             //AllDoors.Add(spawnedDoor);
 
             //instantiatedNewRoom.Doors[doorIndex].spawnedDoor = spawnedDoor;
+            Door loopDoorForProcessing = null;
+            GameObject loopSpawnedDoor = null;
+            if(loopFits) {
+                //we also need to spawn in a second door.
+                //but we could just...not yet? (we can...so room looks like it's working, just need to fix the door now)
 
+
+                //if the loop fits...this should never be a deadend door so..
+                di = rand.Next(0, generatorSettings.doors.Count);
+                doorToSpawn = generatorSettings.doors[di];
+
+                Vector3 loopTargetVoxel = loopTargetDoor.position + loopTargetDoor.direction; //offset one voxel in door dir so we work on the unoccupied voxel the door leads to
+                Vector3 loopTargetWorldVoxPos = GetVoxelWorldPos(loopTargetVoxel, loopTargetDoor.parent.rotation) + loopTargetDoor.parent.transform.position; //need this for offset
+                Vector3 loopTargetWorldDoorDir = GetVoxelWorldDir(loopTargetDoor.direction, loopTargetDoor.parent.rotation); //the target voxel we're going to align to
+
+                loopDoorForProcessing = new Door(loopTargetWorldVoxPos, loopTargetWorldDoorDir, loopTargetDoor.parent);
+
+                loopSpawnedDoor = GameObject.Instantiate(doorToSpawn, loopDoorForProcessing.position - (loopDoorForProcessing.direction * 0.5f) - doorOffset, Quaternion.LookRotation(loopDoorForProcessing.direction), this.transform);
+                loopDoorForProcessing.spawnedDoor = loopSpawnedDoor;
+            }
 
             //build graph.. we know...
             //instantiatedNewRoom and doorForProcessing.parent are the only two rooms that share the connection we just made so...
@@ -433,6 +741,21 @@ namespace DMDungeonGenerator {
                 newNode.connections.Add(con);
                 spawnedDoor.GetComponent<GeneratorDoor>().data = con;
                 DungeonGraph.Add(newNode);
+
+                if(loopFits) {
+                    //also need to add the second door into the graph!
+                    GraphNode otherLastNode = loopDoorForProcessing.parent.node;
+                    GraphConnection otherCon = new GraphConnection();
+                    otherCon.a = otherLastNode;
+                    otherCon.b = newNode;
+                    otherCon.open = true;
+                    otherCon.doorRef = loopDoorForProcessing;
+
+                    otherLastNode.connections.Add(otherCon);
+                    newNode.connections.Add(otherCon);
+                    loopSpawnedDoor.GetComponent<GeneratorDoor>().data = otherCon;
+                    Debug.Log("<color=red>LOOOOP</color>");
+                }
             } else {
                 //want to add just a new door as we did not spawn a room!
 
@@ -457,6 +780,9 @@ namespace DMDungeonGenerator {
                 spawnedDoor.GetComponent<GeneratorDoor>().data = con;
                 //DungeonGraph.Add(newNode);
             }
+
+
+            
         }
 
         //Wrapping the interal post step, just generator doors for now (eg, taking each door pair and spawning a gameplay door in it's place)
@@ -537,7 +863,7 @@ namespace DMDungeonGenerator {
         /// <param name="data"></param>
         /// <param name="pos"></param>
         /// <param name="rotation"></param>
-        public RoomData AddRoom(RoomData prefabData, Vector3 pos, float rotation) {
+        public RoomData AddRoom(RoomData prefabData, Vector3 pos, float rotation, bool b = false) {
             GameObject roomObj = GameObject.Instantiate(prefabData.gameObject, pos, Quaternion.AngleAxis(rotation, Vector3.up), this.transform);
             RoomData data = roomObj.GetComponent<RoomData>();
             data.rotation = rotation; //set the instantiated roomData's rotation to be used for the voxels transformation into worldspace later
@@ -546,6 +872,9 @@ namespace DMDungeonGenerator {
             AllRooms.Add(roomObj);
             AddGlobalVoxels(data, pos, rotation);
 
+            if(b) {
+                roomObj.GetComponent<GameplayRoom>().ColorRoom(Color.black);
+            }
             return data;
         }
 
@@ -813,8 +1142,8 @@ namespace DMDungeonGenerator {
                         Door doorRef = DungeonGraph[i].connections[j].doorRef;
                         Vector3 dPos = doorRef.spawnedDoor.transform.position + offset;
 
+                        Gizmos.DrawWireCube(dPos, new Vector3(s, s, s));
                         if(!c.open) {
-                            Gizmos.DrawWireCube(dPos, new Vector3(s, s, s));
                             if(drawKeyLocksLabels) {
                                 GUIStyle style = new GUIStyle();
                                 style.fontSize = 25;

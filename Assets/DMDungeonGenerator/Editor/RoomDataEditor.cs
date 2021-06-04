@@ -40,6 +40,7 @@ public class RoomDataEditor: Editor {
         for(int i = 0; i < data.Doors.Count; i++) {
             Handles.color = new Color(1f, 0f, 0f, 0.4f);
             Vector3 pos = (data.Doors[i].position + (data.Doors[i].direction * 0.5f) + (Vector3.down * 0.25f))* voxelScale;
+            Handles.Label(data.transform.TransformPoint(pos), i.ToString());
 
             if(mode != EditingMode.Doors) {
                 Handles.CubeHandleCap(-1, data.transform.TransformPoint(pos), data.transform.rotation, 0.5f*voxelScale, EventType.Repaint);

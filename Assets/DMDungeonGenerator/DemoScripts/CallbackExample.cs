@@ -183,10 +183,13 @@ public class CallbackExample : MonoBehaviour
                 possibleRooms.Add(generator.DungeonGraph[i]);
             }
         }
-
-        int randomSelected = generator.rand.Next(possibleRooms.Count);
-        GameObject selectedRoom = possibleRooms[randomSelected].data.gameObject; //here we can get the gameobject of the room and any associated scripts on it...for this demo we're not doing anything, just gunna colour the room
-        selectedRoom.GetComponent<GameplayRoom>().ColorRoom(Color.red);  
+        if(possibleRooms.Count > 0) {
+            int randomSelected = generator.rand.Next(possibleRooms.Count);
+            GameObject selectedRoom = possibleRooms[randomSelected].data.gameObject; //here we can get the gameobject of the room and any associated scripts on it...for this demo we're not doing anything, just gunna colour the room
+            if(selectedRoom.GetComponent<GameplayRoom>() != null) {
+                selectedRoom.GetComponent<GameplayRoom>().ColorRoom(Color.red);
+            }
+        }
     }
 
     /// <summary>
@@ -196,7 +199,8 @@ public class CallbackExample : MonoBehaviour
     /// </summary>
     /// <param name="door"></param>
     private void OnLockDoorCallback(GameObject door) {
-        door.gameObject.GetComponent<GameplayDoor>().LockDoor();
+        GameplayDoor d = door.GetComponent<GameplayDoor>();
+        if(d != null) d.LockDoor();
     }
 
     /// <summary>
@@ -206,6 +210,7 @@ public class CallbackExample : MonoBehaviour
     /// <param name="room"></param>
     /// <param name="generator"></param>
     private void OnInitRoomCallback(GameObject room, System.Random rand) {
-        room.GetComponent<GameplayRoom>().Init(rand);
+        GameplayRoom r = room.GetComponent<GameplayRoom>();
+        if(r != null) r.Init(rand);
     }
 }

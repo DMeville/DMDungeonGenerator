@@ -86,6 +86,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdb53d5371f46fb4dab2452c520cdd3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTransparency: 0.2
   LocalVoxels:
   - position: {x: 0, y: 0, z: 0}
   - position: {x: 0, y: 0, z: -1}
@@ -99,6 +100,10 @@ MonoBehaviour:
     direction: {x: 0, y: 0, z: 1}
     parent: {fileID: 8813994962250839499}
     spawnedDoor: {fileID: 0}
+  - position: {x: 0, y: 0, z: -1}
+    direction: {x: 1, y: 0, z: 0}
+    parent: {fileID: 8813994962250839499}
+    spawnedDoor: {fileID: 0}
   node:
     pathfindingWeight: 0
     depth: 0
@@ -107,6 +112,7 @@ MonoBehaviour:
     data: {fileID: 0}
     connections: []
   rotation: 0
+  roomTemplateID: 0
 --- !u!114 &-6824778278921435124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119,6 +125,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61896ee2abd96044ea7e2a265ea45049, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawnLocations: []
+  spawnables: []
+  spawnedRandomProps: []
 --- !u!1001 &553005580307309003
 PrefabInstance:
   m_ObjectHideFlags: 0
