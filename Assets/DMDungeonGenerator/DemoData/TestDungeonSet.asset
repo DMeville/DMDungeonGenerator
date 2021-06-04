@@ -16,7 +16,7 @@ MonoBehaviour:
   description: Enter any text here
   TargetRooms: 100
   minRooms: 20
-  useDeadendRooms: 0
+  useDeadendRooms: 1
   spawnRooms:
   - {fileID: 4671341197351391010, guid: 67278d84de69a594fa7262753664b6e0, type: 3}
   possibleRooms:

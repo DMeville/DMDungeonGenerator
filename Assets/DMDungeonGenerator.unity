@@ -401,7 +401,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   generateOnStart: 1
   randomSeedOnStart: 1
-  randomSeed: 9763
+  randomSeed: 7000
   generationComplete: 0
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
