@@ -358,7 +358,6 @@ namespace DMDungeonGenerator {
                                     }
                                     if(facingEachother) {
                                         //Debug.Log("--------- NEW LOOP ROOM PASSED: Doors facing eachother check passed: " + possibleRoom.gameObject.name + " :r " + neededRotation);
-                                        int doorIndexToConnect = 0;
                                         //what door index from loop room are we using as the position/alignment target?
                                         //we know we are processing targetDoor, so we need to know which door in possibleRoom we should sync up to
                                         //then we also need to close/connect up the other two doors in the other two doorpairs
@@ -449,7 +448,7 @@ namespace DMDungeonGenerator {
 
                 //--
                 RoomData newRoom = roomPrefab.GetComponent<RoomData>();
-                Debug.Log("Door index: " + possibleDoorAIndex);
+                //Debug.Log("Door index: " + possibleDoorAIndex);
                 Door newDoor = newRoom.Doors[possibleDoorAIndex];
                 Vector3 targetDoorDir = targetWorldDoorDir;
                 Vector3 sDLocalWithRotation = GetVoxelWorldPos(newDoor.position, rotationNeeded);
@@ -598,7 +597,6 @@ namespace DMDungeonGenerator {
                         nextSpawn.neededRotation = (int)computedRoomRotation;
                         nextSpawn.possibleDoorAIndex = doorIndex;
                         nextSpawn.useMe = true;
-
                     }
 
                 } while(doorsToTry.Count > 0 && anyOverlaps);
@@ -615,7 +613,6 @@ namespace DMDungeonGenerator {
         public void GenerateNextRoom() {
             Door targetDoor = openSet[0]; //grab the first door in the openset to process
             openSet.RemoveAt(0);
-
 
             Vector3 targetVoxel = targetDoor.position + targetDoor.direction; //offset one voxel in door dir so we work on the unoccupied voxel the door leads to
             Vector3 targetWorldVoxPos = GetVoxelWorldPos(targetVoxel, targetDoor.parent.rotation) + targetDoor.parent.transform.position; //need this for offset
@@ -690,11 +687,16 @@ namespace DMDungeonGenerator {
                 //we now have a spawn template for either a loop room, or a normal room
                 if(!success) { //if we made it here, we either have a newRoom assigned and ready to spawn, or we have no rooms left to as they all didn't fit
                     makeRoomConnectionSingleSided = true;
+                    instantiateRoom = false;
                 }
             }
 
             //Instantiate
             if(instantiateRoom) { //if it's not a single sided room, we have to spawn the connecting room from the spawn we decided on. Otherwise we just skip it!
+                if(nextSpawn.roomToSpawn == null) {
+                    Debug.Break();
+                    return;
+                }
                 instantiatedNewRoom = AddRoom(nextSpawn.roomToSpawn.GetComponent<RoomData>(), nextSpawn.roomOffset, nextSpawn.neededRotation, nextSpawn.isLoopRoom);
 
                 if(!nextSpawn.isLoopRoom) {
@@ -715,7 +717,7 @@ namespace DMDungeonGenerator {
                     openSet.RemoveAt(nextSpawn.otherSpawnedDoor);
                 }
             }
-            
+
 
 
             //spawn in door geometry ----
@@ -734,9 +736,8 @@ namespace DMDungeonGenerator {
 
             //if it's a loop room, we have to spawn in a second door as well
             GameObject loopSpawnedDoor = null;
-            if(nextSpawn.isLoopRoom) {
+            if(nextSpawn.isLoopRoom && instantiateRoom) {
                 doorToSpawn = generatorSettings.doors[rand.Next(0, generatorSettings.doors.Count)]; //will never be a deadend door, so grab one from the normal doors list.
-
                 Vector3 loopTargetVoxel = loopTargetDoor.position + loopTargetDoor.direction; //offset one voxel in door dir so we work on the unoccupied voxel the door leads to
                 Vector3 loopTargetWorldVoxPos = GetVoxelWorldPos(loopTargetVoxel, loopTargetDoor.parent.rotation) + loopTargetDoor.parent.transform.position; //need this for offset
                 Vector3 loopTargetWorldDoorDir = GetVoxelWorldDir(loopTargetDoor.direction, loopTargetDoor.parent.rotation); //the target voxel we're going to align to
@@ -1189,6 +1190,12 @@ namespace DMDungeonGenerator {
         public int possibleDoorAIndex; //connects up to targetDoor (eg, the door we are processing currently
         public int possibleDoorBIndex; //connects up to otherSpawnDoor
 
+
+        public override string ToString() {
+            string rn = "null";
+            if(roomToSpawn != null) rn = roomToSpawn.gameObject.name;
+            return rn + ": useMe: " + useMe + ": isLoopRoom" + isLoopRoom;
+        }
     }
 
 }

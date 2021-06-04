@@ -160,7 +160,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -191,6 +191,7 @@ GameObject:
   - component: {fileID: 374109433352817470}
   - component: {fileID: 374109433352817465}
   - component: {fileID: 374109433352817471}
+  - component: {fileID: 3239878543015169279}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -250,6 +251,31 @@ CharacterController:
   m_SkinWidth: 0.01
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3239878543015169279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374109433352817464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbd23ed22d45f4b0f8f074cd196dae2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 6af7abe2c9b2245bdbfcf5d8c14bf5e7, type: 3}
+  tint:
+    serializedVersion: 2
+    rgba: 4278190657
+  iconGO: {fileID: 0}
+  scaleWithZoom: 1
+  rotate: 0
+  rotateWithMap: 0
+  mapPosition: {x: 0, y: 0, z: 0}
+  useDirectionIndicator: 0
+  directionIcon: {fileID: 0}
+  rotationOffset: -90
+  layer: -1
 --- !u!1 &374109433356125759
 GameObject:
   m_ObjectHideFlags: 0

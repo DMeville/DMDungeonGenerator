@@ -211,6 +211,6 @@ public class CallbackExample : MonoBehaviour
     /// <param name="generator"></param>
     private void OnInitRoomCallback(GameObject room, System.Random rand) {
         GameplayRoom r = room.GetComponent<GameplayRoom>();
-        if(r != null) r.Init(rand);
+        if(r != null) r.Init(rand);       
     }
 }

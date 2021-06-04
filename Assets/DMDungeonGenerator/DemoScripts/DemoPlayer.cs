@@ -9,7 +9,7 @@ public class DemoPlayer : MonoBehaviour
     public float mouseSensY = 100f;
     public float moveSpeed = 10f;
 
-    public Transform camera;
+    public new Transform camera;
     private float yRot = 0f;
     private Rigidbody rb;
     public CharacterController cc;

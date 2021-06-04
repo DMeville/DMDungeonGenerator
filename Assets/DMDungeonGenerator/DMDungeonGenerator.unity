@@ -400,10 +400,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generateOnStart: 1
-  randomSeedOnStart: 1
-  randomSeed: 7000
+  randomSeedOnStart: 0
+  randomSeed: 1365
   generationComplete: 0
-  generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
+  generatorSettings: {fileID: 11400000, guid: 665f0a466cbee534ba5f11df823c6d56, type: 2}
   AllRooms: []
   AllDoorsData: []
   generateInUpdate: 1
@@ -480,3 +480,4 @@ MonoBehaviour:
   keys: []
   keysToSpawnMin: 5
   keysToSpawnMax: 10
+  minimap: {fileID: 0}
