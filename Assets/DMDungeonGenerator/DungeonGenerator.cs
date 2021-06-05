@@ -197,8 +197,15 @@ namespace DMDungeonGenerator {
                 generatorSettings.possibleRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
                 templateId++;
                 generatorSettings.possibleRooms[i].GetComponent<RoomData>().PrecomputeDeltas();
-
             }
+
+            for(int i = 0; i < generatorSettings.possibleLoopRooms.Count; i++) {
+                generatorSettings.possibleLoopRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
+                templateId++;
+                generatorSettings.possibleLoopRooms[i].GetComponent<RoomData>().PrecomputeDeltas();
+            }
+
+
             for(int i = 0; i < generatorSettings.spawnRooms.Count; i++) {
                 generatorSettings.spawnRooms[i].GetComponent<RoomData>().roomTemplateID = templateId;
                 templateId++;
@@ -300,117 +307,125 @@ namespace DMDungeonGenerator {
 
 
             if(dpd.Count > 0) {
-                DoorPairData spawnedPairData = dpd[0];
-                Door b = spawnedPairData.door;
-                Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position;
-                Debug.DrawRay(doorBWorldVoxPos, Vector3.up, Color.black);
-                Debug.DrawRay(targetWorldVoxPos, Vector3.up, Color.white);
-                Debug.DrawLine(doorBWorldVoxPos, targetWorldVoxPos, Color.white);
+                for(int pairs = 0; pairs < dpd.Count; pairs++) {
+                    DoorPairData spawnedPairData = dpd[pairs];
+                    Door b = spawnedPairData.door;
+                    Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position;
+                    Debug.DrawRay(doorBWorldVoxPos, Vector3.up, Color.black);
+                    Debug.DrawRay(targetWorldVoxPos, Vector3.up, Color.white);
+                    Debug.DrawLine(doorBWorldVoxPos, targetWorldVoxPos, Color.white);
 
-                for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) {
-                    RoomData possibleRoom = generatorSettings.possibleRooms[i].gameObject.GetComponent<RoomData>();
-                    if(possibleRoom.Doors.Count < 2) continue;
-                    //Debug.Log("Checking possible room: " + possibleRoom.gameObject.name);
+                    List<GameObject> possibleRooms = new List<GameObject>(generatorSettings.possibleLoopRooms);
+                    //possibleRooms.Clear();
+                    //possibleRooms.AddRange(generatorSettings.possibleLoopRooms);
 
-                    //we need to check every door pair in this possible room, to see if the computed STUFF matches the spawened door pair we already have.
-                    for(int j = 0; j < possibleRoom.Doors.Count; j++) {
-                        Door possibleDoor = possibleRoom.Doors[j];
-                        for(int k = 0; k < possibleDoor.doorPairs.Count; k++) {
-                            DoorPairData possiblePairData = possibleDoor.doorPairs[k];
+                    for(int i = 0; i < possibleRooms.Count; i++) {
+                        RoomData possibleRoom = possibleRooms[i].gameObject.GetComponent<RoomData>();
+                        if(possibleRoom.Doors.Count < 2) continue;
+                        //Debug.Log("Checking possible room: " + possibleRoom.gameObject.name);
 
-                            int pairIndex = -1;
-                            for(int dpi = 0; dpi < possibleRoom.Doors.Count; dpi++) {
-                                if(possiblePairData.door == possibleRoom.Doors[dpi]) {
-                                    pairIndex = dpi;
-                                }
-                            }
+                        //we need to check every door pair in this possible room, to see if the computed STUFF matches the spawened door pair we already have.
+                        for(int j = 0; j < possibleRoom.Doors.Count; j++) {
+                            Door possibleDoor = possibleRoom.Doors[j];
+                            for(int k = 0; k < possibleDoor.doorPairs.Count; k++) {
+                                DoorPairData possiblePairData = possibleDoor.doorPairs[k];
 
-                            //Debug.Log("------------------------------------ Checking pair with doors: " + j + " : " + pairIndex);
-
-
-                            if(possiblePairData.VoxelDistance() == spawnedPairData.VoxelDistance()) {
-                                //Debug.Log("Matching voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance());
-                                //check what rotation we'd need to match this...
-                                if(possiblePairData.CompareDeltas(spawnedPairData.deltaPos)) {
-                                    //Debug.Log("Matching Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
-                                    int neededRotation = possiblePairData.GetMatchingDeltaRotation(spawnedPairData.deltaPos);
-                                    //Debug.Log("Needs rotation of: " + neededRotation);
-
-                                    //check if doors line up with either of these rotations?
-                                    Vector3 sDoorA = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation);
-                                    Vector3 sDoorB = GetVoxelWorldDir(spawnedPairData.door.direction, spawnedPairData.door.parent.rotation);
-
-                                    Vector3 pDoorA = GetVoxelWorldDir(possibleDoor.direction, neededRotation);
-                                    Vector3 pDoorB = GetVoxelWorldDir(possiblePairData.door.direction, neededRotation);
-
-                                    //Debug.Log("SDoor directions: " + sDoorA.ToString() + " : " + sDoorB.ToString());
-                                    // Debug.Log("pDoor directions: " + pDoorA.ToString() + " : " + pDoorB.ToString());
-
-                                    //do these doors face eachother? (in any order?)
-                                    //it says we are facing eachother...but the data doesn't seem right??
-                                    bool facingEachother = false;
-                                    if(sDoorA == -pDoorA && sDoorB == -pDoorB) {
-                                        facingEachother = true;
-                                        //Debug.Log("FacingA");
-                                    } else if(sDoorA == -pDoorB && sDoorB == -pDoorA) {
-                                        facingEachother = true;
-                                        //Debug.Log("FacingB");
+                                int pairIndex = -1;
+                                for(int dpi = 0; dpi < possibleRoom.Doors.Count; dpi++) {
+                                    if(possiblePairData.door == possibleRoom.Doors[dpi]) {
+                                        pairIndex = dpi;
                                     }
-                                    if(facingEachother) {
-                                        //Debug.Log("--------- NEW LOOP ROOM PASSED: Doors facing eachother check passed: " + possibleRoom.gameObject.name + " :r " + neededRotation);
-                                        //what door index from loop room are we using as the position/alignment target?
-                                        //we know we are processing targetDoor, so we need to know which door in possibleRoom we should sync up to
-                                        //then we also need to close/connect up the other two doors in the other two doorpairs
-                                        //we know the targetDoors worldPosition and world direction.  
+                                }
 
-                                        //we can just test it?
-                                        //Align doors A->A with rotation, and see if B->B also then land on the matching voxels?
-                                        //if not Align doors A->B and see if B->A land on the matching voxels?
-                                        //then we can return door index too to the loopRooms list?
+                                //Debug.Log("------------------------------------ Checking pair with doors: " + j + " : " + pairIndex);
+                                //Debug.Log("Checking voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance() + ": " + possiblePairData.VoxelDistance());
 
-                                        //we can also check the deltaPos, if they match exactly it should mean they are ordered, if they are flipped, it means we need to reorder the doorpairs?
 
-                                        //spawnedPairData.deltaPos; //compare against
-                                        int otherIndex = -1;
-                                        int indexA = -1;
-                                        int indexB = -1;
-                                        Vector3 delta = possiblePairData.GetRotatedDelta(neededRotation);
-                                        bool matchingDeltas = (delta == spawnedPairData.deltaPos);
-                                        bool inverted = false;
-                                        if(!matchingDeltas) {
-                                            if(delta == -spawnedPairData.deltaPos) {
-                                                matchingDeltas = true;
-                                                inverted = true;
-                                            }
+                                if(possiblePairData.VoxelDistance() == spawnedPairData.VoxelDistance()) {
+                                    //Debug.Log("Matching voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance());
+                                    //check what rotation we'd need to match this...
+                                    if(possiblePairData.CompareDeltas(spawnedPairData.deltaPos)) {
+                                        //Debug.Log("Matching Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
+                                        int neededRotation = possiblePairData.GetMatchingDeltaRotation(spawnedPairData.deltaPos);
+                                        //Debug.Log("Needs rotation of: " + neededRotation);
+
+                                        //check if doors line up with either of these rotations?
+                                        Vector3 sDoorA = GetVoxelWorldDir(targetDoor.direction, targetDoor.parent.rotation);
+                                        Vector3 sDoorB = GetVoxelWorldDir(spawnedPairData.door.direction, spawnedPairData.door.parent.rotation);
+
+                                        Vector3 pDoorA = GetVoxelWorldDir(possibleDoor.direction, neededRotation);
+                                        Vector3 pDoorB = GetVoxelWorldDir(possiblePairData.door.direction, neededRotation);
+
+                                        //Debug.Log("SDoor directions: " + sDoorA.ToString() + " : " + sDoorB.ToString());
+                                        // Debug.Log("pDoor directions: " + pDoorA.ToString() + " : " + pDoorB.ToString());
+
+                                        //do these doors face eachother? (in any order?)
+                                        //it says we are facing eachother...but the data doesn't seem right??
+                                        bool facingEachother = false;
+                                        if(sDoorA == -pDoorA && sDoorB == -pDoorB) {
+                                            facingEachother = true;
+                                            //Debug.Log("FacingA");
+                                        } else if(sDoorA == -pDoorB && sDoorB == -pDoorA) {
+                                            facingEachother = true;
+                                            //Debug.Log("FacingB");
                                         }
+                                        if(facingEachother) {
+                                            //Debug.Log("--------- NEW LOOP ROOM PASSED: Doors facing eachother check passed: " + possibleRoom.gameObject.name + " :r " + neededRotation);
+                                            //what door index from loop room are we using as the position/alignment target?
+                                            //we know we are processing targetDoor, so we need to know which door in possibleRoom we should sync up to
+                                            //then we also need to close/connect up the other two doors in the other two doorpairs
+                                            //we know the targetDoors worldPosition and world direction.  
 
-                                        //Debug.Log("Do the deltas match?: " + matchingDeltas + ": inverted? " + inverted);
-                                        if(matchingDeltas) {
-                                            for(int dd = 0; dd < possibleRoom.Doors.Count; dd++) {
-                                                if(possibleRoom.Doors[dd] == possiblePairData.door) {
-                                                    otherIndex = dd;
+                                            //we can just test it?
+                                            //Align doors A->A with rotation, and see if B->B also then land on the matching voxels?
+                                            //if not Align doors A->B and see if B->A land on the matching voxels?
+                                            //then we can return door index too to the loopRooms list?
+
+                                            //we can also check the deltaPos, if they match exactly it should mean they are ordered, if they are flipped, it means we need to reorder the doorpairs?
+
+                                            //spawnedPairData.deltaPos; //compare against
+                                            int otherIndex = -1;
+                                            int indexA = -1;
+                                            int indexB = -1;
+                                            Vector3 delta = possiblePairData.GetRotatedDelta(neededRotation);
+                                            bool matchingDeltas = (delta == spawnedPairData.deltaPos);
+                                            bool inverted = false;
+                                            if(!matchingDeltas) {
+                                                if(delta == -spawnedPairData.deltaPos) {
+                                                    matchingDeltas = true;
+                                                    inverted = true;
                                                 }
                                             }
 
-                                            if(!inverted) {
-                                                indexA = j;
-                                                indexB = otherIndex;
-                                            } else {
-                                                indexA = otherIndex;
-                                                indexB = j;
+                                            //Debug.Log("Do the deltas match?: " + matchingDeltas + ": inverted? " + inverted);
+                                            if(matchingDeltas) {
+                                                for(int dd = 0; dd < possibleRoom.Doors.Count; dd++) {
+                                                    if(possibleRoom.Doors[dd] == possiblePairData.door) {
+                                                        otherIndex = dd;
+                                                    }
+                                                }
+
+                                                if(!inverted) {
+                                                    indexA = j;
+                                                    indexB = otherIndex;
+                                                } else {
+                                                    indexA = otherIndex;
+                                                    indexB = j;
+                                                }
+
+                                                //Debug.Log("Connecting doors: targetDoor -> possibleRoom.Doors[" + indexA + "] and spawnedPair -> possibleRoom.Doors[" + indexB + "]");
+
+                                                RoomSpawnTemplate t = new RoomSpawnTemplate();
+                                                t.isLoopRoom = true;
+                                                t.roomToSpawn = possibleRoom.gameObject;
+                                                t.neededRotation = neededRotation;
+                                                t.otherSpawnedDoor = spawnedPairData.openSetIndex;
+                                                t.possibleDoorAIndex = indexA;
+                                                t.possibleDoorBIndex = indexB;
+                                                //Debug.Log("<color=red>We have a loop room that would fit here!: " + t.ToString() + "</color>");
+                                                loopRooms.Add(t);
                                             }
-
-                                            //Debug.Log("Connecting doors: targetDoor -> possibleRoom.Doors[" + indexA + "] and spawnedPair -> possibleRoom.Doors[" + indexB + "]");
-
-                                            RoomSpawnTemplate t = new RoomSpawnTemplate();
-                                            t.isLoopRoom = true;
-                                            t.roomToSpawn = possibleRoom.gameObject;
-                                            t.neededRotation = neededRotation;
-                                            t.otherSpawnedDoor = spawnedPairData.openSetIndex;
-                                            t.possibleDoorAIndex = indexA;
-                                            t.possibleDoorBIndex = indexB;
-                                            loopRooms.Add(t);
-                                        }   
+                                        }
                                     }
                                 }
                             }
@@ -662,7 +677,6 @@ namespace DMDungeonGenerator {
 
             //roomsToTry list MIGHT be empty, if so we just don't spawn a room, spawn a door and a halfempty connection
             bool makeRoomConnectionSingleSided = false; //single voxel rooms are added to the possRooms list, this toggle forces us to just close off a room with a wall "door" that can't be passed through
-            if(roomsToTry.Count == 0) makeRoomConnectionSingleSided = true; //so if have no rooms to try (which would inlcude single vox) we know we just wall off.
 
             //check if loop fits...
             //---------------------------------------------------------------
@@ -670,6 +684,7 @@ namespace DMDungeonGenerator {
 
             //after we run this, we MAY have a valid spawn in nextSpawn
             CheckLoopRoomsValid(nextSpawn, loopRooms, targetWorldVoxPos, targetWorldDoorDir);
+            if(roomsToTry.Count == 0 && !nextSpawn.useMe) makeRoomConnectionSingleSided = true; //so if have no rooms to try (which would inlcude single vox) we know we just wall off. But if we can...lets loop two rooms instead of walling two off that could be looped!
             //if(nextSpawn.useMe) Debug.Log("<color=red>We found a valid loop room to spawn!</color>");
 
             bool computeNextRoom = true; 

@@ -20,8 +20,8 @@ MonoBehaviour:
   spawnRooms:
   - {fileID: 4671341197351391010, guid: 67278d84de69a594fa7262753664b6e0, type: 3}
   possibleRooms:
-  - {fileID: 5883593812307289775, guid: 4203946bcc8cea245b1d3ced4b9d597f, type: 3}
-  - {fileID: 5501150146831203405, guid: a5c91660b1d52494bb64795a0e34c3a1, type: 3}
+  - {fileID: 4671341197351391010, guid: 67278d84de69a594fa7262753664b6e0, type: 3}
+  - {fileID: 4671341197351391010, guid: 66c601cd79c269b45ba6ab68eb8de2a4, type: 3}
   deadendRooms:
   - {fileID: 5883593812307289775, guid: 5d154a66dcae142498790142a90718e5, type: 3}
   deadendDoors:

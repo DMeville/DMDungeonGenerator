@@ -19,8 +19,12 @@ namespace DMDungeonGenerator {
         [Header("The first room to spawn will be chosen from this list")]
         public List<GameObject> spawnRooms = new List<GameObject>(); //also bosses, doors, whatever
 
+
         [Header("Generator will use these rooms randomly")]
         public List<GameObject> possibleRooms = new List<GameObject>();
+
+        [Header("Generator will add these to room list when trying to make a loop. These will not be spawned otherwise")]
+        public List<GameObject> possibleLoopRooms = new List<GameObject>();
 
         [Header("You must have at least one dead end room (which is only a single voxel in volume)!")]
         public List<GameObject> deadendRooms = new List<GameObject>();

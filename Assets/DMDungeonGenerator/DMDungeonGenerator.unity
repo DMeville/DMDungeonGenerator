@@ -400,14 +400,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generateOnStart: 1
-  randomSeedOnStart: 0
-  randomSeed: 1365
+  randomSeedOnStart: 1
+  randomSeed: 4048
   generationComplete: 0
-  generatorSettings: {fileID: 11400000, guid: 665f0a466cbee534ba5f11df823c6d56, type: 2}
+  generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
   AllDoorsData: []
   generateInUpdate: 1
-  generationTimer: 0.01
+  generationTimer: 0.1
   debugGradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
@@ -439,7 +439,7 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   drawGlobalVoxels: 0
   drawAllDoors: 0
-  drawGraph: 0
+  drawGraph: 1
   drawDepthLabels: 0
   colourRoomsWithDepth: 0
   colourLockedDoors: 0
@@ -480,4 +480,3 @@ MonoBehaviour:
   keys: []
   keysToSpawnMin: 5
   keysToSpawnMax: 10
-  minimap: {fileID: 0}
