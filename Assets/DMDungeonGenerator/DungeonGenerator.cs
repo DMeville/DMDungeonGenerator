@@ -264,7 +264,7 @@ namespace DMDungeonGenerator {
                 Vector3 doorAWorldVoxPos = GetVoxelWorldPos(a.position + a.direction, a.parent.rotation) + a.parent.transform.position;
                 Vector3 doorBWorldVoxPos = GetVoxelWorldPos(b.position + b.direction, b.parent.rotation) + b.parent.transform.position;
                 Vector3 dist = new Vector3(Mathf.Abs(doorAWorldVoxPos.x - doorBWorldVoxPos.x), Mathf.Abs(doorAWorldVoxPos.y - doorBWorldVoxPos.y), Mathf.Abs(doorAWorldVoxPos.z - doorBWorldVoxPos.z));
-                float vD = dist.x + dist.y + dist.z - 1f;
+                float vD = dist.x + dist.y + dist.z + 1;
                 //need to find a matching doorpair that fits these critera in order to spawn it in and close it up...
 
                 if(Mathf.RoundToInt(vD) <= 10) { //if the doors are close enough we might be able to connect to (as most rooms I think would be relatively small idk this number is straight outta thin air
@@ -273,15 +273,15 @@ namespace DMDungeonGenerator {
                     dd.openSetIndex = i;
                     dd.deltaPos = doorBWorldVoxPos - doorAWorldVoxPos;
                     dpd.Add(dd);
-                    //Debug.Log("New door pair!");
+                    //Debug.Log("New door pair!: " + i);
                     //Debug.Log("Voxel distance between doors is: " + vD);
                     //Debug.Log("LDelta: " + dd.deltaPos.ToString());
                     //Debug.Log("WDelta: " + (doorBWorldVoxPos - doorAWorldVoxPos).ToString());
                     //Debug.Log("Distance: " + dd.VoxelDistance());
                     //Debug.Log("Door directions: " + GetVoxelWorldDir(a.direction, a.parent.rotation).ToString() + " : " + GetVoxelWorldDir(b.direction, b.parent.rotation).ToString());
-                    //Debug.DrawLine(doorAWorldVoxPos, doorBWorldVoxPos, Color.red);
-                    Debug.DrawRay(doorAWorldVoxPos, GetVoxelWorldDir(a.direction, a.parent.rotation) * 0.5f, Color.green);
-                    Debug.DrawRay(doorBWorldVoxPos, GetVoxelWorldDir(b.direction, b.parent.rotation) * 0.5f, Color.green);
+                    Debug.DrawLine(doorAWorldVoxPos, doorBWorldVoxPos, Color.red);
+                    Debug.DrawRay(doorAWorldVoxPos, GetVoxelWorldDir(a.direction, a.parent.rotation) * 0.5f, DMDungeonGenerator.DungeonGenerator.GetKeyColor(i));
+                    Debug.DrawRay(doorBWorldVoxPos, GetVoxelWorldDir(b.direction, b.parent.rotation) * 0.5f, DMDungeonGenerator.DungeonGenerator.GetKeyColor(i));
                 }
             }
             return dpd;
@@ -315,14 +315,28 @@ namespace DMDungeonGenerator {
                     Debug.DrawRay(targetWorldVoxPos, Vector3.up, Color.white);
                     Debug.DrawLine(doorBWorldVoxPos, targetWorldVoxPos, Color.white);
 
-                    List<GameObject> possibleRooms = new List<GameObject>(generatorSettings.possibleLoopRooms);
-                    //possibleRooms.Clear();
-                    //possibleRooms.AddRange(generatorSettings.possibleLoopRooms);
+                    bool log = false;
+
+                    List<GameObject> possibleRooms = new List<GameObject>(generatorSettings.possibleRooms); //try and loop with any of the possible rooms we have, if none of those work, try the other rooms
+                                                                                                            //possibleRooms.Clear();
+                    for(int i = 0; i < possibleRooms.Count; i++) { 
+                        if(possibleRooms[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
+                            //Debug.Log("Removed template: " + targetDoor.parent.roomTemplateID);
+                            possibleRooms.RemoveAt(i); break;
+                        }
+                    }
+
+                    possibleRooms.Shuffle(rand);
+                    List<GameObject> possLoopRooms = new List<GameObject>(generatorSettings.possibleLoopRooms);
+                    possLoopRooms.Shuffle(rand);
+                    possibleRooms.AddRange(possLoopRooms);
+
 
                     for(int i = 0; i < possibleRooms.Count; i++) {
                         RoomData possibleRoom = possibleRooms[i].gameObject.GetComponent<RoomData>();
                         if(possibleRoom.Doors.Count < 2) continue;
-                        //Debug.Log("Checking possible room: " + possibleRoom.gameObject.name);
+                        //if(possibleRoom.gameObject.name != "Hallway 2") log = false;
+                        if(log) Debug.Log("Checking possible room: " + possibleRoom.gameObject.name);
 
                         //we need to check every door pair in this possible room, to see if the computed STUFF matches the spawened door pair we already have.
                         for(int j = 0; j < possibleRoom.Doors.Count; j++) {
@@ -337,15 +351,16 @@ namespace DMDungeonGenerator {
                                     }
                                 }
 
-                                //Debug.Log("------------------------------------ Checking pair with doors: " + j + " : " + pairIndex);
-                                //Debug.Log("Checking voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance() + ": " + possiblePairData.VoxelDistance());
+                                if(log)Debug.Log("------------------------------------ Checking pair with doors: " + j + " : " + pairIndex);
+                                if(log) Debug.Log("Checking voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance() + ": " + possiblePairData.VoxelDistance());
+                                if(log) Debug.Log("Checking Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
 
 
                                 if(possiblePairData.VoxelDistance() == spawnedPairData.VoxelDistance()) {
-                                    //Debug.Log("Matching voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance());
+                                    if(log) Debug.Log("Matching voxel dist with room: " + possibleRoom.gameObject.name + " : " + spawnedPairData.VoxelDistance());
                                     //check what rotation we'd need to match this...
                                     if(possiblePairData.CompareDeltas(spawnedPairData.deltaPos)) {
-                                        //Debug.Log("Matching Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
+                                        if(log) Debug.Log("Matching Deltas: " + spawnedPairData.deltaPos.ToString() + " (unrotate) possible: " + possiblePairData.deltaPos.ToString());
                                         int neededRotation = possiblePairData.GetMatchingDeltaRotation(spawnedPairData.deltaPos);
                                         //Debug.Log("Needs rotation of: " + neededRotation);
 
@@ -397,7 +412,7 @@ namespace DMDungeonGenerator {
                                                 }
                                             }
 
-                                            //Debug.Log("Do the deltas match?: " + matchingDeltas + ": inverted? " + inverted);
+                                            if(log) Debug.Log("Do the deltas match?: " + matchingDeltas + ": inverted? " + inverted);
                                             if(matchingDeltas) {
                                                 for(int dd = 0; dd < possibleRoom.Doors.Count; dd++) {
                                                     if(possibleRoom.Doors[dd] == possiblePairData.door) {
@@ -422,7 +437,7 @@ namespace DMDungeonGenerator {
                                                 t.otherSpawnedDoor = spawnedPairData.openSetIndex;
                                                 t.possibleDoorAIndex = indexA;
                                                 t.possibleDoorBIndex = indexB;
-                                                //Debug.Log("<color=red>We have a loop room that would fit here!: " + t.ToString() + "</color>");
+                                                if(log) Debug.Log("<color=red>We have a loop room that would fit here!: " + t.ToString() + "</color>");
                                                 loopRooms.Add(t);
                                             }
                                         }
@@ -645,11 +660,14 @@ namespace DMDungeonGenerator {
             //create a copy of the "all possible rooms list" so we can pick and remove from this list as we try different rooms
             //this ensures we don't try the same room over and over, and so we know when we have exhausted all the possiblities and just have to cap it off with a 1x1x1 vox room
 
-            for(int i = 0; i < roomsToTry.Count; i++) { //find the room template of the room we are trying to connect to, and remove that room template from the list of possible rooms to spawn
-                if(roomsToTry[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
-                    roomsToTry.RemoveAt(i); break;
-                }
-            }
+            //for(int i = 0; i < roomsToTry.Count; i++) { //find the room template of the room we are trying to connect to, and remove that room template from the list of possible rooms to spawn
+            //    if(roomsToTry[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
+            //        if(roomsToTry.Count > 1) {
+            //            roomsToTry.RemoveAt(i); break;
+            //        }
+            //    }
+            //}
+
             roomsToTry.Shuffle(rand); //shuffle this list so we dont always try the rooms in the same order.
 
             for(int i = 0; i < generatorSettings.possibleRooms.Count; i++) { //add back the room type we removed to the end of the (now shuffled) list, so that we try every other room first and only use this room as a last choice

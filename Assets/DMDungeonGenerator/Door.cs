@@ -33,7 +33,7 @@ namespace DMDungeonGenerator {
 
         //this is kind of just used as a broadphase
         public int VoxelDistance() {
-            return (int)(Mathf.Abs(deltaPos.x) + Mathf.Abs(deltaPos.y) + Mathf.Abs(deltaPos.z) + 1);
+            return (Mathf.RoundToInt(Mathf.Abs(deltaPos.x)) + Mathf.RoundToInt(Mathf.Abs(deltaPos.y)) + Mathf.RoundToInt(Mathf.Abs(deltaPos.z))) + 1;
         }
 
         public bool CompareDeltas(Vector3 v) {

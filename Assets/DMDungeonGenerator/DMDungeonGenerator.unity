@@ -400,8 +400,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generateOnStart: 1
-  randomSeedOnStart: 1
-  randomSeed: 4048
+  randomSeedOnStart: 0
+  randomSeed: 7444
   generationComplete: 0
   generatorSettings: {fileID: 11400000, guid: 8c935a738432e444f88e273b4433494b, type: 2}
   AllRooms: []
