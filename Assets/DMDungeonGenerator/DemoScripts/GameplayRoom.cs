@@ -5,13 +5,20 @@ using UnityEngine;
 
 public class GameplayRoom : MonoBehaviour {
 
+    public bool initialized = false;
+    public int roomIndex = -1;
 
     public List<Transform> spawnLocations = new List<Transform>();
     public List<GameObject> spawnables = new List<GameObject>();
 
     public List<GameObject> spawnedRandomProps = new List<GameObject>();
 
-    public void Init(System.Random rand) {
+
+
+    public void Init(int roomIndex, System.Random rand) {
+
+        this.initialized = true;
+        this.roomIndex = roomIndex;
 
         //spawn props randomly in the room based off locators set when buildin the room prefab
         int numSpawn = rand.Next(spawnLocations.Count);

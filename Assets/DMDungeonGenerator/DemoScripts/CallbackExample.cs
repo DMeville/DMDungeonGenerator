@@ -55,7 +55,7 @@ public class CallbackExample : MonoBehaviour
 
         //iterate through all the rooms and call a "Init" method to set up random props
         for(int i = 0; i < generator.DungeonGraph.Count; i++) {
-            OnInitRoomCallback(generator.DungeonGraph[i].data.gameObject, generator.rand);
+            OnInitRoomCallback(generator.DungeonGraph[i].data.gameObject, generator.rand, i);
         }
 
 
@@ -209,8 +209,8 @@ public class CallbackExample : MonoBehaviour
     /// </summary>
     /// <param name="room"></param>
     /// <param name="generator"></param>
-    private void OnInitRoomCallback(GameObject room, System.Random rand) {
+    private void OnInitRoomCallback(GameObject room, System.Random rand, int roomIndex) {
         GameplayRoom r = room.GetComponent<GameplayRoom>();
-        if(r != null) r.Init(rand);       
+        if(r != null) r.Init(roomIndex, rand);       
     }
 }
