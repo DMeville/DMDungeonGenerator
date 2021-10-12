@@ -23,6 +23,7 @@ namespace DMDungeonGenerator {
         public bool generationComplete = false;
         private bool regenerateWithDifferentSeed = false;
         private int attempts = 0;
+
         /// <summary>
         /// Hook into this to do any dungeon postprocessing, like grabbing the list of all the rooms that were generated and choosing one as a boss room, etc
         /// </summary>
@@ -34,7 +35,7 @@ namespace DMDungeonGenerator {
         /// is laid out to match the voxels, changing voxelScale literally makes the voxels bigger so that the room geometry will no longer link up properly. The generator should still *work*
         /// but visually your rooms will not connect at all!. THis really only affects rendering, as the generator uses unscaled voxels for everything except for rendering.  
         /// </summary>
-        public static float voxelScale = 1f; //see note above about changing this.
+        public static float voxelScale = 1f; //see note above about changing this. This must be whole numbers, (no decimals) and can not be smaller than 1. Anything other than 1 is kind of mostly untested so your milage may vary
 
         [Header("Room Prefabs")]
         public DungeonSet generatorSettings;
@@ -764,7 +765,7 @@ namespace DMDungeonGenerator {
             //instantiate the doors
             //first door, we will always spawn
             Vector3 doorOffset = new Vector3(0f, 0.5f, 0f); //to offset it so the gameobject pivot is on the bottom edge of the voxel
-            GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f) - doorOffset, Quaternion.LookRotation(doorForProcessing.direction), this.transform);
+            GameObject spawnedDoor = GameObject.Instantiate(doorToSpawn, doorForProcessing.position - (doorForProcessing.direction * 0.5f*voxelScale) - doorOffset*voxelScale, Quaternion.LookRotation(doorForProcessing.direction), this.transform);
             doorForProcessing.spawnedDoor = spawnedDoor;
 
             //if it's a loop room, we have to spawn in a second door as well
@@ -909,7 +910,8 @@ namespace DMDungeonGenerator {
         public void AddGlobalVoxels(RoomData d, Vector3 offset, float rotation = 0f) {
             for(int i = 0; i < d.LocalVoxels.Count; i++) {
                 Voxel v = d.LocalVoxels[i];
-                Vector3 r = GetVoxelWorldPos(v.position, rotation) + offset;
+                Vector3 r = (GetVoxelWorldPos(v.position, rotation)) + offset;
+                Debug.Log(r.ToString() + " : " + voxelScale);
                 Vector3 iV = new Vector3(Mathf.RoundToInt(r.x), Mathf.RoundToInt(r.y), Mathf.RoundToInt(r.z));
                 GlobalVoxelGrid.Add(iV, true);
                 //Debug.Log("Adding voxel to global voxel list: " + r);
@@ -936,7 +938,7 @@ namespace DMDungeonGenerator {
         public Vector3 GetVoxelWorldPos(Vector3 localPos, float rotation) {
             Quaternion r = Quaternion.Euler(new Vector3(0, rotation, 0));
             Matrix4x4 m = Matrix4x4.Rotate(r);
-            return m.MultiplyPoint(localPos);
+            return m.MultiplyPoint(localPos*voxelScale);
         }
 
         public Vector3 GetVoxelWorldDir(Vector3 localDir, float rotation) {
