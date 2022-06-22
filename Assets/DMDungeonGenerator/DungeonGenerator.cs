@@ -34,8 +34,16 @@ namespace DMDungeonGenerator {
         /// WARNING!!! voxelScale can not be changed at runtime, and changing this after you have already laid out your room geometry will break everything, as room geometry 
         /// is laid out to match the voxels, changing voxelScale literally makes the voxels bigger so that the room geometry will no longer link up properly. The generator should still *work*
         /// but visually your rooms will not connect at all!. THis really only affects rendering, as the generator uses unscaled voxels for everything except for rendering.  
+        /// 
+        /// There are some cases where you want this voxel scale to be something other than 1 (which is 1m cubed). Usually you'd want each voxel to be larger than your main player (since doors must fit in a single voxel
+        /// and the player needs to fit through doors). To have accurate real world scales you probably want to turn up voxel scale to 2 or 3 at least, so you can have doorways at 1.8m or whatever.
+        /// 
+        /// When you change voxel scale here, this updates the voxel size on the RoomData gizmos, so it is reccomended to only change this voxel scale ONCE at the begining of your project to whatever scale 
+        /// fits your gameplay and other models. Then build your rooms and voxels after. If you change this, and try and use rooms in the generator that were created with a DIFFERENT voxel size, things will fail.
+        /// 
+        /// If you have questions about this, post an issue on github or tweet me @DMeville
         /// </summary>
-        public static float voxelScale = 1f; //see note above about changing this. This must be whole numbers, (no decimals) and can not be smaller than 1. Anything other than 1 is kind of mostly untested so your milage may vary
+        public static float voxelScale = 1f; 
         
         [Header("Room Prefabs")]
         public DungeonSet generatorSettings;
