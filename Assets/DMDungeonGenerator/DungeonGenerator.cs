@@ -36,7 +36,7 @@ namespace DMDungeonGenerator {
         /// but visually your rooms will not connect at all!. THis really only affects rendering, as the generator uses unscaled voxels for everything except for rendering.  
         /// </summary>
         public static float voxelScale = 1f; //see note above about changing this. This must be whole numbers, (no decimals) and can not be smaller than 1. Anything other than 1 is kind of mostly untested so your milage may vary
-
+        
         [Header("Room Prefabs")]
         public DungeonSet generatorSettings;
         //room prefabs, should be extracted into a SO so we can swap them easy
@@ -95,6 +95,7 @@ namespace DMDungeonGenerator {
             if(generateOnStart) {
                 StartGenerator(randomSeed);
             }
+            Debug.Log("Voxel scale is: " + voxelScale);
         }
 
         public void StartGenerator(int seed) {
@@ -319,7 +320,7 @@ namespace DMDungeonGenerator {
                     bool log = false;
 
                     List<GameObject> possibleRooms = new List<GameObject>(generatorSettings.possibleRooms); //try and loop with any of the possible rooms we have, if none of those work, try the other rooms
-                                                                                                            //possibleRooms.Clear();
+                    //possibleRooms.Clear();
                     for(int i = 0; i < possibleRooms.Count; i++) { 
                         if(possibleRooms[i].GetComponent<RoomData>().roomTemplateID == targetDoor.parent.roomTemplateID) { //this is to make it so we are less likely to spawn the same room type twice in a row
                             //Debug.Log("Removed template: " + targetDoor.parent.roomTemplateID);
@@ -421,10 +422,14 @@ namespace DMDungeonGenerator {
                                                     }
                                                 }
 
-                                                if(!inverted) {
+                                                inverted = false;
+                                                if (!inverted)
+                                                {
                                                     indexA = j;
                                                     indexB = otherIndex;
-                                                } else {
+                                                }
+                                                else
+                                                {
                                                     indexA = otherIndex;
                                                     indexB = j;
                                                 }
@@ -911,7 +916,7 @@ namespace DMDungeonGenerator {
             for(int i = 0; i < d.LocalVoxels.Count; i++) {
                 Voxel v = d.LocalVoxels[i];
                 Vector3 r = (GetVoxelWorldPos(v.position, rotation)) + offset;
-                Debug.Log(r.ToString() + " : " + voxelScale);
+                //Debug.Log(r.ToString() + " : " + voxelScale);
                 Vector3 iV = new Vector3(Mathf.RoundToInt(r.x), Mathf.RoundToInt(r.y), Mathf.RoundToInt(r.z));
                 GlobalVoxelGrid.Add(iV, true);
                 //Debug.Log("Adding voxel to global voxel list: " + r);
@@ -1088,21 +1093,21 @@ namespace DMDungeonGenerator {
             Gizmos.color = Color.blue;
             for(int i = 0; i < openSet.Count; i++) {
                 Vector3 v = GetVoxelWorldPos((openSet[i].position + openSet[i].direction), openSet[i].parent.rotation) + openSet[i].parent.transform.position;
-                Gizmos.DrawWireCube(v, Vector3.one);
+                Gizmos.DrawWireCube(v, Vector3.one*voxelScale);
             }
 
             Gizmos.color = Color.green;
             if(drawGlobalVoxels) {
                 Gizmos.color = globalVoxelColor;
                 foreach(var i in GlobalVoxelGrid) {
-                    Gizmos.DrawWireCube(i.Key, Vector3.one);
+                    Gizmos.DrawWireCube(i.Key, Vector3.one*voxelScale);
                 }
             }
 
             if(drawAllDoors) {
                 Gizmos.color = Color.cyan;
                 for(int i = 0; i < AllDoorsData.Count; i++) {
-                    Gizmos.DrawWireCube(AllDoorsData[i].position, Vector3.one);
+                    Gizmos.DrawWireCube(AllDoorsData[i].position, Vector3.one*voxelScale);
                 }
             }
 

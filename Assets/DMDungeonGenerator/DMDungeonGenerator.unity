@@ -406,8 +406,8 @@ MonoBehaviour:
   generatorSettings: {fileID: 11400000, guid: 68dbe86204dcdd04c9a6866b7809cfce, type: 2}
   AllRooms: []
   AllDoorsData: []
-  generateInUpdate: 0
-  generationTimer: 0.1
+  generateInUpdate: 1
+  generationTimer: 1
   debugGradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
@@ -437,9 +437,9 @@ MonoBehaviour:
     m_Mode: 0
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  drawGlobalVoxels: 0
-  drawAllDoors: 0
-  drawGraph: 0
+  drawGlobalVoxels: 1
+  drawAllDoors: 1
+  drawGraph: 1
   drawDepthLabels: 0
   colourRoomsWithDepth: 0
   colourLockedDoors: 0

@@ -297,7 +297,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdb53d5371f46fb4dab2452c520cdd3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debugTransparency: 0
+  debugTransparency: 0.25
   LocalVoxels:
   - position: {x: 0, y: 0, z: 0}
   - position: {x: 0, y: 0, z: -1}
@@ -352,6 +352,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61896ee2abd96044ea7e2a265ea45049, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  initialized: 0
+  roomIndex: -1
   spawnLocations:
   - {fileID: 2750372707099789909}
   - {fileID: 1777293545557601114}
